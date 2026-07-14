@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="前端面试题目详情、回答骨架、公司记录与技术来源">
+  <title>题目详情 · 前端面试知识库</title>
+  <link rel="stylesheet" href="assets/question-bank.css">
+  <link rel="stylesheet" href="assets/question-detail.css">
+</head>
+<body>
+  <header class="topbar">
+    <a class="brand" href="index.html">🎯 前端面试知识库</a>
+    <nav aria-label="主导航"><a href="index.html">概念动画</a><a href="question-bank.html">题库 / 复盘</a></nav>
+  </header>
+  <main class="detail-shell">
+    <a class="back" href="question-bank.html">← 返回问题合集</a>
+    <article id="detail" hidden>
+      <div class="detail-heading">
+        <div><p class="eyebrow" id="track"></p><h1 id="title"></h1></div>
+        <button id="share" type="button">复制题目链接</button>
+      </div>
+      <div class="detail-meta" id="meta"></div>
+      <section class="detail-block"><h2>面试官可能这样问</h2><p class="lead" id="prompt"></p></section>
+      <section class="detail-block"><h2>高分回答骨架</h2><ol class="answer" id="answer"></ol></section>
+      <section class="detail-grid">
+        <div class="detail-block"><h2>公司出现记录</h2><div id="companies"></div></div>
+        <div class="detail-block"><h2>可查询来源</h2><div class="source-list" id="sources"></div></div>
+      </section>
+      <a id="animation" class="animation-cta" hidden>打开概念动画 →</a>
+    </article>
+    <section id="notFound" class="load-error" hidden><h1>没有找到这道题</h1><p>题目 ID 可能已失效，请返回问题合集重新选择。</p></section>
+  </main>
+  <script src="assets/question-detail.js" defer></script>
+</body>
+</html>

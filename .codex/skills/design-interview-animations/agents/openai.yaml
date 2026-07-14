@@ -1,0 +1,4 @@
+interface:
+  display_name: "面试概念动画设计"
+  short_description: "Design vivid concept-specific interview animations"
+  default_prompt: "Use $design-interview-animations to design a distinctive, interview-depth animation for this concept."

@@ -44,12 +44,12 @@ function render() {
     const card = document.createElement("article");
     card.className = "card";
     card.innerHTML =
-      '<div class="card-header"><h2>' + escapeHtml(question.title) + '</h2><span class="badge ' + escapeHtml(question.questionType) + '">' + labelType(question.questionType) + '</span><span class="badge ' + escapeHtml(question.difficulty) + '">' + escapeHtml(question.difficulty) + '</span></div>' +
+      '<div class="card-header"><h2><a style="color:inherit;text-decoration:none" href="question.html?id=' + encodeURIComponent(question.id) + '">' + escapeHtml(question.title) + '</a></h2><span class="badge ' + escapeHtml(question.questionType) + '">' + labelType(question.questionType) + '</span><span class="badge ' + escapeHtml(question.difficulty) + '">' + escapeHtml(question.difficulty) + '</span></div>' +
       '<p class="prompt">' + escapeHtml(question.prompt) + '</p>' +
       '<div class="tags">' + question.tags.map((tag) => '<span class="tag">' + escapeHtml(tag) + '</span>').join("") + '</div>' +
       '<div class="company"><strong>公司出现：' + occurrence.total + ' 次</strong><br>' + escapeHtml(occurrence.text) + '</div>' +
       '<details><summary>展开高分回答骨架</summary><ol>' + question.answerOutline.map((item) => '<li>' + escapeHtml(item) + '</li>').join("") + '</ol></details>' +
-      '<div class="sources">' + sources.map((source) => '<a href="' + escapeHtml(source.url) + '" target="_blank" rel="noreferrer">来源：' + escapeHtml(source.publisher) + '</a>').join("") + (question.animationSceneId ? '<a class="animation-link" href="index.html#' + encodeURIComponent(question.animationSceneId) + '">查看概念动画 →</a>' : "") + '</div>' +
+      '<div class="sources"><a class="animation-link" href="question.html?id=' + encodeURIComponent(question.id) + '">独立题目页 →</a>' + sources.map((source) => '<a href="' + escapeHtml(source.url) + '" target="_blank" rel="noreferrer">来源：' + escapeHtml(source.publisher) + '</a>').join("") + (question.animationSceneId ? '<a class="animation-link" href="index.html?scene=' + encodeURIComponent(question.animationSceneId) + '">查看概念动画 →</a>' : "") + '</div>' +
       '<div class="status ' + (question.sourceStatus === "verified" ? "" : "review") + '">' + labelStatus(question.sourceStatus) + '</div>';
     list.appendChild(card);
   });

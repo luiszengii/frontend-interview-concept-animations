@@ -5,8 +5,9 @@
   "description": "可滚动交互的前端面试概念动画站",
   "type": "module",
   "scripts": {
-    "check": "node scripts/check-html.mjs && node scripts/validate-content.mjs",
+    "check": "node scripts/check-html.mjs && node scripts/validate-content.mjs && npm run check:pages",
     "check:content": "node scripts/validate-content.mjs",
+    "check:pages": "node --check assets/question-bank.js && node --check assets/question-detail.js",
     "dev": "node scripts/serve.mjs",
     "install:skill": "node scripts/install-skill.mjs"
   },

@@ -8,10 +8,11 @@
 - 题库与复盘入口：[question-bank.html](question-bank.html)
 - data/ 保存题目、技术出处和面试复盘的单一事实来源
 - .codex/skills/interview-recap-curator/ 是持续录入复盘的 Codex Skill 源码
+- .codex/skills/design-interview-animations/ 是避免模板化动画的设计 Skill 源码
 
 - 34 组概念动画，覆盖 JavaScript、React、工程化、网络性能与 AI 前端
 - 51 个针对真实项目追问新增的强化步骤
-- 单文件、无框架依赖，下载 `index.html` 即可离线使用
+- 静态多页、无框架依赖；动画、题库和题目详情各自拥有可分享 URL
 - 桌面端采用双栏滚动叙事，移动端采用上方动画、下方讲解布局
 - 支持触控横滑、安全区和“减少动态效果”系统设置
 
@@ -46,10 +47,19 @@ npm run check
 
 项目采用“一个场景对应一个 `SCENES.push(...)` 注册项”的结构。后续可以在不改变交互框架的情况下，逐步把场景拆分为独立模块。
 
+安装仓库中的 Skills：
+
+```bash
+npm run install:skill
+```
+
+录入复盘时使用 `$interview-recap-curator`；设计或重做动画时使用 `$design-interview-animations`。
+
 ## 动画制作约定
 
-这部分是后续维护 Skill 的设计输入；在 Skill 正式固化前，新增动画也应遵循它。
+这部分已经固化进 `$design-interview-animations`，新增或重做动画都应遵循它。
 
+- 质量金标准：实时通信对照、防抖 vs 节流、Vite vs Webpack、大文件上传、从输入 URL 到页面展示。
 - 只为状态变化、数据流转、生命周期、架构链路或边界处理制作动画。纯定义题优先进入题库文字卡，不为了动效而动效。
 - 保持现有深色滚动叙事风格：上方或左侧是稳定的动画舞台，滚动步骤逐一推进状态；颜色只表达语义，不作无意义装饰。
 - 每一步只讲一个变化，并同步呈现“发生了什么、为什么这样、下一步会怎样”。

@@ -6818,7 +6818,15 @@ read cookie → tenant → rewrite</div><div class="ix-banner${s.deny?" warn":""
   const cats=Object.keys(groups).sort((a,b)=>{const ia=CAT_ORDER.indexOf(a),ib=CAT_ORDER.indexOf(b);return (ia<0?99:ia)-(ib<0?99:ib);});
   $("#side").innerHTML = cats.map(c=>'<div class="grp">'+c+'</div>'+groups[c].map(o=>'<button data-i="'+o.i+'">'+o.s.title+'</button>').join('')).join('');
   const navBtns=[].slice.call(document.querySelectorAll('#side button'));
-  navBtns.forEach(b=>b.onclick=function(){ load(+b.dataset.i); if(window.innerWidth<=860) setNav(false); });
+  navBtns.forEach(b=>b.onclick=function(){
+    const nextIndex=+b.dataset.i;
+    const url=new URL(location.href);
+    url.searchParams.set('scene',SCENES[nextIndex].id);
+    url.hash='';
+    history.pushState({scene:SCENES[nextIndex].id},'',url);
+    load(nextIndex);
+    if(window.innerWidth<=860) setNav(false);
+  });
 
   // 侧栏收起/展开（记忆）
   function setNav(open){ document.body.classList.toggle('nav-open',open); try{localStorage.setItem('scrolly_nav',open?'1':'0');}catch(e){} }
@@ -6866,9 +6874,15 @@ read cookie → tenant → rewrite</div><div class="ix-banner${s.deny?" warn":""
     if(ticking) return; ticking=true;
     requestAnimationFrame(function(){ ticking=false; pickActive(); });
   },{passive:true});
+  const queryId=new URLSearchParams(location.search).get('scene');
   const hashId=decodeURIComponent(location.hash.replace(/^#/,''));
-  const initialIndex=SCENES.findIndex(s=>s.id===hashId);
+  const initialIndex=SCENES.findIndex(s=>s.id===(queryId||hashId));
   load(initialIndex>=0?initialIndex:0);
+  window.addEventListener('popstate',function(){
+    const sceneId=new URLSearchParams(location.search).get('scene');
+    const nextIndex=SCENES.findIndex(s=>s.id===sceneId);
+    if(nextIndex>=0) load(nextIndex);
+  });
 })();
 </script>
 </body>
