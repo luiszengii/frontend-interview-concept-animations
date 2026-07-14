@@ -2,8 +2,19 @@ import { readFile } from "node:fs/promises";
 import vm from "node:vm";
 
 const html = await readFile(new URL("../index.html", import.meta.url), "utf8");
-const scripts = [...html.matchAll(/<script(?:\s[^>]*)?>([\s\S]*?)<\/script>/gi)].map(
-  (match) => match[1],
+const distinctSceneCss = await readFile(new URL("../assets/interview-scenes.css", import.meta.url), "utf8");
+const distinctSceneScript = await readFile(new URL("../assets/interview-scenes.js", import.meta.url), "utf8");
+const scriptTags = [...html.matchAll(/<script(?:\s[^>]*)?>([\s\S]*?)<\/script>/gi)];
+const scripts = await Promise.all(
+  scriptTags.map(async (match) => {
+    const openTag = match[0].slice(0, match[0].indexOf(">") + 1);
+    const src = openTag.match(/\ssrc=["']([^"']+)["']/i)?.[1];
+    if (!src) return match[1];
+    if (/^(?:https?:)?\/\//i.test(src)) {
+      throw new Error(`检查器不执行远程脚本：${src}`);
+    }
+    return readFile(new URL(`../${src.replace(/^\.\//, "")}`, import.meta.url), "utf8");
+  }),
 );
 
 if (!html.includes('<meta name="viewport"')) {
@@ -33,6 +44,13 @@ if (!Array.isArray(scenes) || scenes.length === 0) {
 
 const ids = new Set();
 let stepCount = 0;
+const distinctContext = vm.createContext({ window: {}, console });
+new vm.Script(distinctSceneScript, { filename: "assets/interview-scenes.js" }).runInContext(distinctContext);
+const distinctSceneIds = new Set((distinctContext.window.SCENES || []).map((scene) => scene.id));
+
+if (distinctSceneIds.size === 0) {
+  throw new Error("独立动画文件没有注册任何场景");
+}
 
 for (const scene of scenes) {
   if (!scene.id || !scene.title || !scene.cat) {
@@ -46,6 +64,18 @@ for (const scene of scenes) {
   }
   if (typeof scene.apply !== "function") {
     throw new Error(`场景缺少 apply 方法：${scene.id}`);
+  }
+  if (/\binterview-flow\b/.test(scene.html || "")) {
+    throw new Error(`场景仍在使用已禁用的通用 interview-flow 模板：${scene.id}`);
+  }
+  if (distinctSceneIds.has(scene.id)) {
+    const rootClass = `scene-${scene.id}`;
+    if (!(scene.html || "").includes(rootClass)) {
+      throw new Error(`重做场景缺少独立舞台根节点：${scene.id}`);
+    }
+    if (!distinctSceneCss.includes(`.${rootClass}`)) {
+      throw new Error(`重做场景缺少独立样式命名空间：${scene.id}`);
+    }
   }
   ids.add(scene.id);
   stepCount += scene.steps.length;

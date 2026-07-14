@@ -2,6 +2,25 @@
 
 本项目遵循“面向用户的变化优先”记录版本。
 
+## 1.3.0 - 2026-07-14
+
+### 重做
+
+- 将 AI Token 流、上下文压缩、ReAct/Skill、多租户、Next.js 请求链、Axios/SSE 管道、RBAC 七组动画从通用流程模板改为概念专属舞台。
+- 新场景分别使用三层时钟、上下文工作台、推理环路、单镜像投影、鉴权分支、传输分流与三道安全门，不再只替换卡片文案。
+
+### 修正
+
+- 修正 `let` 暂时性死区示例在未捕获异常后继续执行的错误叙事。
+- 修正循环引用 JSON 序列化的异常类型，并补充 `structuredClone` 的适用边界。
+- 修正 React index key 的表述：问题是组件状态与业务记录错配，不是必然大面积销毁重建。
+- 按当前 Next.js 文档将 Middleware 标注为 Proxy 的旧称，并保留面试常用术语。
+
+### 来源与维护
+
+- 为本轮修正与重做场景补充 MDN、React、Next.js、OWASP、OpenAI 等官方来源。
+- 场景维护指南禁止共享流程模板，并要求概念专属空间隐喻、持续对象和失败路径。
+
 ## 1.2.0 - 2026-07-14
 
 ### 新增
@@ -36,6 +55,6 @@
 - 上下文 Token 滑动窗口与摘要压缩。
 - ReAct 循环与业务 Skill 设计。
 - 单镜像多租户、运行时主题与 Feature Flag。
-- Next.js Middleware、SSR 与 Hydration。
+- Next.js Proxy（原 Middleware）、SSR 与 Hydration。
 - Axios 拦截器与 SSE 传输分流。
 - RBAC 路由、组件、接口三层权限闭环。

@@ -719,52 +719,54 @@
       <div data-region="note"></div>
     </div>`,
     steps:[
-      { n:`同一段代码、两栏对比：左边用 <span class="hl-macro">var</span>，右边用 <span class="hl-sync">let</span>。代码在<b>声明之前</b>就 <code>console.log</code> 了变量，并且声明被包在一个 <code>{ }</code> 块里。看看两者命运有何不同。`,
-        ptr:-1, hoist:false, blockOpen:false, blockGone:false, varOut:[], letOut:[] },
-      { n:`进入作用域的<b>编译阶段</b>：引擎先扫描声明，把它们<span class="hl-sync">提升</span>到作用域顶部。<b>var</b> 此刻就被初始化为 <span class="hl-macro">undefined</span>——已经"到位"，可以访问。`,
-        ptr:-1, hoist:true, varSlot:'ok', letSlot:null, blockOpen:false, blockGone:false, varOut:[], letOut:[] },
-      { n:`<b>let / const</b> 同样被提升了，但<b>不会</b>被初始化。它进入<span class="hl-host">暂时性死区 TDZ</span>（红色禁区）：变量存在，但在执行到声明语句前，谁碰它谁报错。`,
-        ptr:-1, hoist:true, varSlot:'ok', letSlot:'tdz', blockOpen:false, blockGone:false, varOut:[], letOut:[] },
-      { n:`执行指针从上往下走，走到第 1 行 <code>console.log</code>。左栏读 var——它是 undefined，于是<span class="hl-macro">安静地打印 undefined</span>，不报错。`,
-        ptr:1, hoist:true, varSlot:'ok', letSlot:'tdz', blockOpen:false, blockGone:false,
+      { n:`先跑片段 A：变量声明在同一个 <code>{ }</code> 块里，但读取发生在声明之前。左边用 <span class="hl-macro">var</span>，右边用 <span class="hl-sync">let</span>，比较“提升”和 TDZ。`,
+        variant:'tdz', ptr:-1, hoist:false, blockOpen:true, blockGone:false, varOut:[], letOut:[] },
+      { n:`进入编译阶段：<b>var</b> 是函数作用域，声明被提升并立即初始化成 <span class="hl-macro">undefined</span>；因此块内提前读取仍然有值可取。`,
+        variant:'tdz', ptr:-1, hoist:true, varSlot:'ok', letSlot:null, blockOpen:true, blockGone:false, varOut:[], letOut:[] },
+      { n:`<b>let / const</b> 也会建立绑定，但在执行到声明语句之前不会初始化。这个从块开始到声明行的区域就是<span class="hl-host">暂时性死区 TDZ</span>。`,
+        variant:'tdz', ptr:-1, hoist:true, varSlot:'ok', letSlot:'tdz', blockOpen:true, blockGone:false, varOut:[], letOut:[] },
+      { n:`执行块内第 2 行：左栏读取 var，打印 <span class="hl-macro">undefined</span>，然后可以继续向下执行。`,
+        variant:'tdz', ptr:2, hoist:true, varSlot:'ok', letSlot:'tdz', blockOpen:true, blockGone:false,
         varOut:[{c:'undefined',t:'undef',ico:'▸'}], letOut:[] },
-      { n:`同一行，右栏读 let——它还在 TDZ 里！于是<span class="hl-host">抛出 ReferenceError: Cannot access 'x' before initialization</span>（红色闪烁）。注意：这不是"x 未定义"，变量其实<b>已声明</b>，只是还没初始化。这就是 var 和 let 最关键的行为差异。`,
-        ptr:1, hoist:true, varSlot:'ok', letSlot:'tdz', tdzFire:true, blockOpen:false, blockGone:false,
+      { n:`右栏读取 let 时仍在 TDZ，抛出 <span class="hl-host">ReferenceError: Cannot access 'x' before initialization</span>。这次脚本执行<b>到此停止</b>，不会假装继续跑到声明之后。`,
+        variant:'tdz', ptr:2, hoist:true, varSlot:'ok', letSlot:'tdz', tdzFire:true, blockOpen:true, blockGone:false,
         varOut:[{c:'undefined',t:'undef',ico:'▸'}],
         letOut:[{c:"Uncaught ReferenceError: Cannot access 'x' before initialization",t:'err',ico:'✕'}] },
-      { n:`指针走进 <code>{ }</code> 块。右栏的 <span class="hl-sync">let</span> 在这里创建了一个真正的<b>块级作用域盒子</b>，<code>x = 2</code> 只活在盒子内。左栏 var <b>没有</b>盒子。`,
-        ptr:3, hoist:true, varSlot:'ok', letSlot:'tdz', blockOpen:true, blockGone:false,
-        varOut:[{c:'undefined',t:'undef',ico:'▸'}],
-        letOut:[{c:"Uncaught ReferenceError: Cannot access 'x' before initialization",t:'err',ico:'✕'}] },
-      { n:`离开 <code>{ }</code>，盒子被<span class="hl-bad">销毁</span>，let 的 <code>x</code> 随之消失。而 var 因为是函数作用域，它在块里赋的 <code>x = 2</code> <span class="hl-macro">泄漏</span>到了外面，块外仍能读到 2。`,
-        ptr:6, hoist:true, varSlot:'ok', letSlot:'tdz', blockOpen:false, blockGone:true,
-        varOut:[{c:'undefined',t:'undef',ico:'▸'}],
-        letOut:[{c:"Uncaught ReferenceError: Cannot access 'x' before initialization",t:'err',ico:'✕'}] },
-      { n:`块外再 <code>console.log(x)</code>：var 栏打印 <span class="hl-macro">2</span>（变量泄漏到了块外）。let 栏依然报错——但要点是：<b>第 1 行的报错发生在声明行之前，就已经是 TDZ</b>，所以整段都是 <code>Cannot access 'x' before initialization</code>，而不是"x 未定义"。`,
-        ptr:6, hoist:true, varSlot:'ok', letSlot:'tdz', blockOpen:false, blockGone:true,
-        varOut:[{c:'undefined',t:'undef',ico:'▸'},{c:'2',t:'leak',ico:'▸'}],
-        letOut:[{c:"Uncaught ReferenceError: Cannot access 'x' before initialization",t:'err',ico:'✕'}] },
-      { n:`<b>结论金句</b>：<span class="hl-macro">var 像没有围栏的草地</span>——提升即 undefined、可提前访问、可重复声明、泄漏出块；<span class="hl-sync">let / const 有围栏还有"未到位禁区"(TDZ)</span>——块级作用域、在声明行之前访问直接报 <code>Cannot access before initialization</code>（注意不是 "not defined"）、不可重复声明，<code>const</code> 还锁死引用。优先用 const，其次 let，远离 var。`,
-        ptr:-1, hoist:true, varSlot:'ok', letSlot:'tdz', blockOpen:false, blockGone:true, win:true,
-        varOut:[{c:'undefined',t:'undef',ico:'▸'},{c:'2',t:'leak',ico:'▸'}],
-        letOut:[{c:"Uncaught ReferenceError: Cannot access 'x' before initialization",t:'err',ico:'✕'}] }
+      { n:`现在另起一次独立执行，换成片段 B：先声明，再读取。这样专门观察<span class="hl-sync">块级作用域</span>，不会和上一段已经终止的脚本混在一起。`,
+        variant:'scope', ptr:2, hoist:false, blockOpen:true, blockGone:false, varOut:[], letOut:[] },
+      { n:`块内声明后读取，var 和 let 都打印 <b>2</b>。此时区别不在值，而在绑定属于哪个作用域。`,
+        variant:'scope', ptr:3, hoist:false, blockOpen:true, blockGone:false,
+        varOut:[{c:'2',t:'leak',ico:'▸'}], letOut:[{c:'2',t:'leak',ico:'▸'}] },
+      { n:`离开块后再读取：var 是函数作用域，仍打印 <span class="hl-macro">2</span>；let 的块级绑定已经不可见，此时错误是 <span class="hl-host">x is not defined</span>，这和 TDZ 的“已绑定但未初始化”是两种错误。`,
+        variant:'scope', ptr:5, hoist:false, blockOpen:false, blockGone:true,
+        varOut:[{c:'2',t:'leak',ico:'▸'},{c:'2',t:'leak',ico:'▸'}],
+        letOut:[{c:'2',t:'leak',ico:'▸'},{c:'Uncaught ReferenceError: x is not defined',t:'err',ico:'✕'}] },
+      { n:`<b>结论金句</b>：var 是函数作用域，提升时就初始化为 undefined；let / const 是块级作用域，声明前处于 TDZ。<b>TDZ 报 Cannot access before initialization，离开块后则是 not defined</b>。优先用 const，其次 let。`,
+        variant:'scope', ptr:-1, hoist:false, blockOpen:false, blockGone:true, win:true,
+        varOut:[{c:'2',t:'leak',ico:'▸'},{c:'2',t:'leak',ico:'▸'}],
+        letOut:[{c:'2',t:'leak',ico:'▸'},{c:'Uncaught ReferenceError: x is not defined',t:'err',ico:'✕'}] }
     ],
     apply(root, i){
       const s = this.steps[i];
 
-      // 代码行：左右两栏用各自关键字渲染
-      const lines = [
-        {gut:1, ind:false, html:'<span class="fn">console</span>.<span class="fn">log</span>(x)'},
-        {gut:2, ind:false, kw:true},
-        {gut:3, ind:false, html:'<span class="blk">{</span>'},
-        {gut:4, ind:true,  assign:true},
-        {gut:5, ind:false, html:'<span class="blk">}</span>'},
-        {gut:6, ind:false, html:'<span class="fn">console</span>.<span class="fn">log</span>(x) <span class="blk">// 块外</span>'}
+      // 两个片段独立运行：A 观察 TDZ，B 观察块级作用域。
+      const logLine='<span class="fn">console</span>.<span class="fn">log</span>(x)';
+      const lines = s.variant==='scope' ? [
+        {gut:1, ind:false, html:'<span class="blk">{</span>'},
+        {gut:2, ind:true, kw:true},
+        {gut:3, ind:true, html:logLine},
+        {gut:4, ind:false, html:'<span class="blk">}</span>'},
+        {gut:5, ind:false, html:logLine+' <span class="blk">// 块外</span>'}
+      ] : [
+        {gut:1, ind:false, html:'<span class="blk">{</span>'},
+        {gut:2, ind:true, html:logLine},
+        {gut:3, ind:true, kw:true},
+        {gut:4, ind:false, html:'<span class="blk">}</span>'},
+        {gut:5, ind:false, html:logLine+' <span class="blk">// 块外</span>'}
       ];
       const renderCode = (kw) => lines.map(l=>{
         let body;
-        if(l.kw) body = `<span class="kw">${kw}</span> x = <span class="num">1</span>`;
-        else if(l.assign) body = `${kw==='var'?'':'<span class="kw">'+kw+'</span> '}x = <span class="num">2</span>`;
+        if(l.kw) body = `<span class="kw">${kw}</span> x = <span class="num">2</span>`;
         else body = l.html;
         const active = (s.ptr===l.gut) ? ' active':'';
         const ptr = (s.ptr===l.gut) ? '<span class="ptr">▶</span>':'';
@@ -938,7 +940,7 @@
             <div class="dc-sub">obj.self = obj —— 形成一个环</div>
           </div>
           <div class="dc-row">
-            <div class="dc-case bad"><b>JSON.stringify(obj)</b><br>💥 <span class="bad">RangeError</span>：顺着 self 无限往里转，<b>栈爆了</b>。</div>
+            <div class="dc-case bad"><b>JSON.stringify(obj)</b><br>💥 <span class="bad">TypeError</span>：检测到循环结构，抛出 <b>Converting circular structure to JSON</b>。</div>
             <div class="dc-case ok"><b>WeakMap 方案</b><br>✓ 拷 obj 前先 <b>记进 WeakMap</b>；递归再遇到同一个 obj → <span class="ok">命中缓存直接返回</span>，<b>不再无限递归</b>。</div>
           </div>
         </div>` },
@@ -947,7 +949,7 @@
         panel:`<div class="dc-panel dc-final">
           <div class="dc-f-row"><span class="tag macro">浅拷贝</span>只复制第一层 → 里层<b>两根箭头共用同一块</b> → 改一个、另一个跟着变。</div>
           <div class="dc-f-row"><span class="tag micro">深拷贝</span>递归复制每一层 → <b>各指各的新块</b> → 互不影响。</div>
-          <div class="dc-tip">JSON 法图省事，循环引用 / 函数场景用 structuredClone 或手写 + WeakMap。</div>
+          <div class="dc-tip">循环引用可用 structuredClone 或手写递归 + WeakMap；函数不能被 structuredClone 克隆，需要按业务策略手写处理。</div>
         </div>` },
     ],
     apply(root, i){
@@ -1170,12 +1172,12 @@
       <div class="legend">
         <span><i style="background:var(--sync)"></i>原有节点</span>
         <span><i style="background:var(--micro)"></i>复用/新增正确</span>
-        <span><i style="background:var(--bad)"></i>被判定为「变了」重渲染</span>
+        <span><i style="background:var(--bad)"></i>组件身份与业务记录错配</span>
       </div>
     </div>`,
     steps:[
       {
-        n:`初始列表 <b>[A, B, C]</b>。每一项都是带输入框的组件，里面填了各自的内容。左右两栏将分别用<span class="hl-bad">index 当 key</span> 和 <span class="hl-micro">业务 id 当 key</span> 做对照。`,
+        n:`初始列表 <b>[A, B, C]</b>。每一项都是带<b>组件本地 state / 非受控输入值</b>的列表项。左右两栏将分别用<span class="hl-bad">index 当 key</span> 和 <span class="hl-micro">业务 id 当 key</span> 做对照。`,
         mode:'init',
         list:[
           {id:'a',label:'A',val:'苹果'},
@@ -1185,7 +1187,7 @@
         leftVerdict:null, rightVerdict:null
       },
       {
-        n:`React 的 diff 是<span class="hl-sync">同层逐个比较</span>：它把新旧两棵子树<b>按位置一一对位</b>，再靠 key 判断「这个位置的节点还是不是原来那个」。`,
+        n:`React 的 diff 先限制在<span class="hl-sync">同一层兄弟节点</span>中，再用 <b>type + key</b> 识别组件身份；没有显式 key 时才更依赖相对位置。`,
         mode:'init',
         list:[
           {id:'a',label:'A',val:'苹果'},
@@ -1205,7 +1207,7 @@
         leftVerdict:null, rightVerdict:null
       },
       {
-        n:`<b>左栏(index key)</b>：key 就是 0/1/2/3。React 对位发现——位置 0 的 key=0 还在，但内容从 <b>A</b> 变成了 <b>X</b>，于是认为「<span class="hl-bad">0 号节点变了</span>」，原地改它而不是新建。`,
+        n:`<b>左栏(index key)</b>：key 就是 0/1/2/3。头部插入后 key=0 仍然存在，React 因而复用原来属于 A 的组件实例来渲染 X。<span class="hl-bad">组件身份已经和业务记录错配</span>。`,
         mode:'index',
         list:[
           {id:'x',label:'X',val:'西瓜'},
@@ -1219,7 +1221,7 @@
         leftVerdict:null, rightVerdict:null
       },
       {
-        n:`往下顺推：位置 1(key=1) 内容从 B 变 A、位置 2 从 C 变 B，这<b>三个原有节点都被判定「变了」、原地重渲染</b>；而位置 3 是<b>新挂载</b>一个节点。<span class="hl-bad">结果是 3 个原地重渲染 + 1 个新挂载，整列无一幸免</span>。`,
+        n:`往下顺推：原 B 实例被拿来渲染 A，原 C 实例被拿来渲染 B，位置 3 才新挂载 C。问题不只是“多渲染几次”，而是<span class="hl-bad">三个组件实例都继承了错误记录的身份</span>。`,
         mode:'index',
         list:[
           {id:'x',label:'X',val:'西瓜'},
@@ -1233,7 +1235,7 @@
         leftVerdict:null, rightVerdict:null
       },
       {
-        n:`更糟的是<span class="hl-bad">受控输入框的值会串位</span>：React 复用了旧的 DOM 输入框，只换了 props，于是 X 这一行里残留着原本 A 的输入内容，内容整体往下错了一位。`,
+        n:`如果列表项保存<b>组件本地 state</b>，或使用带初始值的<b>非受控输入框</b>，错配实例会把旧状态一起带走：X 行继承 A 的“苹果”，A 行继承 B 的“香蕉”。注意：真正受控的 <code>value</code> 会被新 props 同步，不应拿它举串位例子。`,
         mode:'index',
         list:[
           {id:'x',label:'X',val:'苹果'},
@@ -1244,7 +1246,7 @@
         idxRemount:[true,true,true,true],
         idxScramble:[true,true,true,true],
         rightShown:false,
-        leftVerdict:{type:'bad',text:'index key：4 个节点全部重渲染，输入框内容整体串位 — 错误又低效'},
+        leftVerdict:{type:'bad',text:'index key：组件实例与业务记录错配，本地 state / 非受控值整体串位'},
         rightVerdict:null
       },
       {
@@ -1262,7 +1264,7 @@
         rightVerdict:null
       },
       {
-        n:`于是 A/B/C <span class="hl-micro">原地复用</span>、输入框内容<b>纹丝不动</b>，只有 <b>X</b> 被当作真正的新增节点 —— <span class="hl-micro">只有 X 亮绿滑入</span>。`,
+        n:`于是 A/B/C 的组件身份和各自 state 保持绑定，只有 <b>X</b> 是真正的新挂载。稳定 key 保证的是<span class="hl-micro">身份匹配正确</span>；它不等于组件一定不会再次执行 render。`,
         mode:'id',
         list:[
           {id:'x',label:'X',val:'西瓜'},
@@ -1273,10 +1275,10 @@
         idReuse:[false,true,true,true],
         idNew:[true,false,false,false],
         leftVerdict:{type:'muted',text:'index key 的结果（对照）'},
-        rightVerdict:{type:'good',text:'稳定 id key：A/B/C 复用、输入框不串位，仅新增 X — 正确又高效'}
+        rightVerdict:{type:'good',text:'稳定 id key：A/B/C 身份与 state 保持绑定，仅 X 新挂载'}
       },
       {
-        n:`<b>aha：key 是节点的身份证。</b> 它让 React 跨越「位置」认出「还是原来那个组件」，从而复用真实 DOM 与内部状态。<span class="hl-bad">用 index 当 key</span>，身份会随位置漂移，头部插入/删除/排序时必然错乱；<span class="hl-micro">用稳定业务 id</span>，身份恒定，复用精准。`,
+        n:`<b>aha：key 是同级组件的身份证。</b> 它决定旧实例与新记录如何匹配。<span class="hl-bad">用 index 当 key</span>，身份会随位置漂移，增删或排序时可能错配本地 state；<span class="hl-micro">用稳定业务 id</span>，身份恒定。key 解决身份，不直接承诺跳过 render。`,
         mode:'id',
         list:[
           {id:'x',label:'X',val:'西瓜'},
@@ -1286,8 +1288,8 @@
         ],
         idReuse:[false,true,true,true],
         idNew:[true,false,false,false],
-        leftVerdict:{type:'bad',text:'index key → 全列重渲染 + 串位'},
-        rightVerdict:{type:'good',text:'稳定 id key → 精准复用，仅新增 X'}
+        leftVerdict:{type:'bad',text:'index key → 实例身份漂移 + 本地 state 串位'},
+        rightVerdict:{type:'good',text:'稳定 id key → 身份匹配正确，仅 X 新挂载'}
       }
     ],
     apply(root, i){
@@ -1303,7 +1305,7 @@
         ? 'React 不直接操作真实 DOM，而是 diff 新旧虚拟 DOM 树，算出最小改动再落地。'
         : (s.mode==='insert')
           ? '同样的「头部插入」，key 策略不同，diff 的结论天差地别。'
-          : 'key 决定了 React 把同一位置的新旧节点看成「同一个」还是「换了一个」。';
+          : '在同层兄弟中，type + key 决定新旧节点是否保持同一组件身份；稳定 key 可以跨位置追踪同一条业务记录。';
       leadEl.textContent = lead;
 
       // 插入提示条只在列表里真的出现了 X 时显示（与 X 的实际出现时机保持一致）
@@ -6681,111 +6683,8 @@ useEffect(()=>{
   });
 })();
 </script>
-<style id="mobile-interview-overrides">
-@media(max-width:860px){
-  .interview-flow{font-size:11.5px;padding-bottom:4px}
-  .interview-flow .ix-flow{gap:5px;padding:1px 1px 7px;scroll-snap-type:x proximity;scrollbar-width:none}
-  .interview-flow .ix-flow::-webkit-scrollbar,
-  .interview-flow .ix-grid::-webkit-scrollbar{display:none}
-  .interview-flow .ix-flow .ix-node{flex:0 0 92px;min-height:42px;padding:6px 7px;scroll-snap-align:start}
-  .interview-flow .ix-flow .ix-arr{font-size:14px}
-  .interview-flow .ix-grid,
-  .interview-flow .ix-grid.two{display:flex;gap:9px;overflow-x:auto;scroll-snap-type:x mandatory;scrollbar-width:none;padding:1px 1px 5px}
-  .interview-flow .ix-grid>.ix-card,
-  .interview-flow .ix-grid.two>.ix-card{flex:0 0 calc(100vw - 42px);scroll-snap-align:center;padding:10px;border-radius:11px;box-shadow:none}
-  .interview-flow .ix-head{margin-bottom:6px}
-  .interview-flow .ix-node{padding:6px 8px;border-radius:8px}
-  .interview-flow .ix-node+.ix-node{margin-top:5px}
-  .interview-flow .ix-code{font-size:10.5px;line-height:1.5;padding:7px}
-  .interview-flow .ix-log{min-height:54px;padding:7px;line-height:1.5}
-  .interview-flow .ix-banner{padding:7px 9px;margin-top:7px}
-  .interview-flow .ix-meter{margin:5px 0}
-  .interview-flow .ix-kpi{gap:5px;margin-top:6px}
-  .interview-flow .ix-kpi span{flex-basis:80px;padding:5px}
-  .interview-flow .ix-kpi b{font-size:14px;margin-bottom:0}
-  .interview-flow .ix-chip{padding:4px 7px;margin:2px}
-}
-@media(max-width:430px){
-  .interview-flow .ix-grid>.ix-card,
-  .interview-flow .ix-grid.two>.ix-card{flex-basis:calc(100vw - 34px)}
-}
-@media(prefers-reduced-motion:reduce){
-  *,*::before,*::after{scroll-behavior:auto!important;animation-duration:.01ms!important;animation-iteration-count:1!important;transition-duration:.01ms!important}
-}
-</style>
-<!-- ===== 明日面试强化：只补项目型、链路型概念；纯定义题不重复做动画 ===== -->
-<script>
-(function installInterviewScenes(DATA,CSS){
-  window.SCENES=window.SCENES||[];
-  const esc=s=>String(s==null?"":s).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
-  const state=(yes,tone="on")=>yes?" "+tone:"";
-  const flow=(items,active,done)=>{
-    done=done||[];
-    return `<div class="ix-flow">${items.map((x,i)=>`<div class="ix-node${state(i===active)}${state(done.includes(i),"good")}">${x}</div>${i<items.length-1?'<span class="ix-arr">→</span>':""}`).join("")}</div>`;
-  };
-  const completed=(s,count)=>s.done?Array.from({length:count},(_,i)=>i):Array.from({length:Math.max(0,s.p||0)},(_,i)=>i);
-  const renderers={
-    stream(root,s){
-      const items=["发送 + Controller","SSE / Stream","TextDecoder 缓冲","rAF 合并","React 渲染","Abort / 完成"];
-      root.innerHTML=flow(items,s.p,completed(s,items.length))+`
-      <div class="ix-grid">
-        <div class="ix-card${state(s.p===0,"hot")}"><div class="ix-head">👤 浏览器 <small>${s.status}</small></div><div class="ix-code">const controller = new AbortController()
-fetch('/api/chat', { signal: controller.signal })</div><div class="ix-banner${s.abort?" warn":""}">${s.abort?"⛔ controller.abort() 已触发":"本次请求拥有独立中断句柄"}</div></div>
-        <div class="ix-card${state(s.p>=2&&s.p<=3,"hot")}"><div class="ix-head">📦 分片缓冲区 <small>${s.q.length} 个待合并</small></div><div>${s.q.length?s.q.map((x,k)=>`<span class="ix-chip on" style="animation-delay:${k*.08}s">${esc(x)}</span>`).join(""):'<span class="muted">队列为空</span>'}</div><div class="ix-banner">TextDecoder(stream: true) · 处理半包 / 粘包</div></div>
-        <div class="ix-card${state(s.p===4||s.done,"good")}"><div class="ix-head">✨ 对话区 <small>逐帧提交</small></div><div class="ix-log"><b>Assistant</b><br>${esc(s.t)}${s.p>1&&!s.abort&&!s.done?'<span class="ix-pulse">▍</span>':""}</div></div>
-      </div>`;
-    },
-    context(root,s){
-      const warn=s.used>80;
-      const old=s.phase<4?["需求背景 · 1.2k","方案讨论 · 1.8k","接口结果 · 2.1k","修订过程 · 1.5k"]:["结构化摘要 · 0.8k"];
-      const now=["System Prompt · 1.0k","最近 4 轮原文 · 2.4k","当前问题 · 0.4k","预留回答 · 1.4k"];
-      root.innerHTML=`<div class="ix-card ${warn?"warn":"good"}"><div class="ix-head">🧮 Context Budget <small>${s.used}% · ${warn?"接近阈值":"安全区"}</small></div><div class="ix-meter"><i class="${warn?"warn":""}" style="width:${s.used}%"></i></div><div class="ix-kpi"><span><b>16k</b>模型窗口</span><span><b>${Math.round(16*s.used/100)}k</b>已占用</span><span><b>2k</b>回答预留</span></div></div>
-      <div class="ix-grid two" style="margin-top:12px"><div class="ix-card${state(s.phase===3,"hot")}"><div class="ix-head">🗃️ 较老历史 <small>${s.phase>=4?"已压缩":"原始消息"}</small></div>${old.map((x,k)=>`<div class="ix-node${state(s.phase===3&&k<3,"warn")}${state(s.phase>=4,"good")}">${s.phase>=4?"📝":"💬"} ${x}</div>`).join("")}</div><div class="ix-card${state(s.phase===4||s.phase===5,"good")}"><div class="ix-head">📌 必须保留 <small>最近窗口</small></div>${now.map((x,k)=>`<div class="ix-node${state(k===0||s.phase>=4,"good")}">${k===0?"🔒":"●"} ${x}</div>`).join("")}</div></div>
-      <div class="ix-banner${s.phase>=4?" good":warn?" warn":""}">${s.phase>=4?"摘要替换旧消息 · 原文仍可回查":warn?"达到 80% 阈值 → 进入压缩流程":"每次请求前重新计算预算"}</div>`;
-    },
-    skill(root,s){
-      const items=["用户目标","Reason 判断","Act · Skill","Observe 结果","Final 回答"];
-      root.innerHTML=flow(items,s.p,completed(s,items.length))+`<div class="ix-grid">
-      <div class="ix-card${state(s.p===1,"hot")}"><div class="ix-head">🧠 Agent 编排器 <small>循环 ${s.loop||"—"}</small></div><div class="ix-node${state(s.p===1)}">判断下一步动作</div><div class="ix-node">失败重试 / 终止条件</div><div class="ix-node">调用轨迹与成本</div></div>
-      <div class="ix-card${state(s.p===2,"hot")}"><div class="ix-head">🧩 Skill Registry <small>统一 schema</small></div>${["权限校验","知识库检索","文档定位"].map(x=>`<div class="ix-node${state(s.skill===x,"good")}">${x}${s.skill===x?" · 正在调用":""}</div>`).join("")}</div>
-      <div class="ix-card${state(s.p===3||s.done,"good")}"><div class="ix-head">🔎 Observation <small>结构化 JSON</small></div><div class="ix-log">${s.obs?esc(s.obs):s.done?'<b>答案：</b>合同第 8 页写明……<br>来源可追溯':"等待工具返回"}</div></div></div>`;
-    },
-    tenant(root,s){
-      const items=["通用镜像","识别租户","配置中心","CSS 变量","Feature Flag","按需 chunk","一套交付"];
-      root.style.setProperty("--tenant",s.color);
-      root.innerHTML=flow(items,s.p,completed(s,items.length))+`<div class="ix-grid">
-      <div class="ix-card${state(s.p<=1,"hot")}"><div class="ix-head">📦 app:v2.8.0 <small>单镜像</small></div><div class="ix-node good">core · 鉴权 / 请求 / 上传</div><div class="ix-node">platform · 对话 / 知识库</div><div class="ix-node">extensions · 动态入口</div></div>
-      <div class="ix-card${state(s.p>=2&&s.p<=4,"hot")}" style="border-top:3px solid var(--tenant)"><div class="ix-head">🏢 ${s.tenant} <small>runtime config</small></div><div class="ix-code">--brand-primary: ${s.color};
-flags: [${(s.flags||[]).join(", ")}]</div><div>${["知识库","审计日志","场景编排"].map(x=>`<span class="ix-chip ${(s.flags||[]).includes(x)?"good":""} ${s.hidden===x?"ix-dim":""}">${s.hidden===x?"○":"●"} ${x}</span>`).join("")}</div></div>
-      <div class="ix-card${state(s.p===5||s.done,"good")}"><div class="ix-head">🧱 按需扩展 <small>不进首包</small></div><div class="ix-log">${s.chunk?`import(<b>'${s.chunk}'</b>)<br>仅当前租户下载`:"等待租户配置决定加载项"}</div></div></div>`;
-    },
-    next(root,s){
-      const items=["Browser","Middleware","鉴权 / 租户","SSR / RSC","HTML 首屏","Hydration","可交互"];
-      root.innerHTML=flow(items,s.p,completed(s,items.length))+`<div class="ix-grid">
-      <div class="ix-card${state(s.p===1||s.p===2,s.deny?"bad":"hot")}"><div class="ix-head">🛡️ Edge Middleware <small>请求到路由前</small></div><div class="ix-code">matcher: /dashboard/:path*
-read cookie → tenant → rewrite</div><div class="ix-banner${s.deny?" warn":""}">${s.deny?"302 → /login":"只做轻量、快速的请求决策"}</div></div>
-      <div class="ix-card${state(s.p===3,"hot")}"><div class="ix-head">🖥️ Server Render <small>并行取首屏数据</small></div><div class="ix-node${state(s.p>=3,"good")}">用户信息 + 导航权限</div><div class="ix-node${state(s.p>=3,"good")}">首屏业务数据</div></div>
-      <div class="ix-card${state(s.p>=4&&!s.deny,"good")}"><div class="ix-head">🌐 Browser <small>${s.p>=5?"已绑定事件":"先展示 HTML"}</small></div><div class="ix-log">${s.deny?"跳转登录页":s.p>=5?"<b>页面可交互</b><br>客户端组件接管局部状态":s.p>=4?"<b>首屏已可见</b><br>继续下载必要 JS":"等待响应"}</div></div></div>`;
-    },
-    axios(root,s){
-      const items=["业务调用","请求策略","Transport 分流","响应策略","Stream 解析","领域数据"];
-      root.innerHTML=flow(items,s.p,completed(s,items.length))+`<div class="ix-grid">
-      <div class="ix-card${state(s.p===1,"hot")}"><div class="ix-head">⬆️ Request Policy <small>共享</small></div>${["auth + tenant","camel → snake","traceId + timeout"].map(x=>`<div class="ix-node${state(s.p===1,"good")}">${x}</div>`).join("")}</div>
-      <div class="ix-card${state(s.p===2||s.p===4,"hot")}"><div class="ix-head">🔀 Transport <small>${s.transport==="sse"?"流式":"普通请求"}</small></div><div class="ix-node${s.transport==="json"?" good ix-pulse":" ix-dim"}">Axios · JSON / Blob</div><div class="ix-node${s.transport==="sse"?" good ix-pulse":" ix-dim"}">fetch · ReadableStream / SSE</div></div>
-      <div class="ix-card${state(s.p===3||s.p===5,"good")}"><div class="ix-head">⬇️ Output Contract <small>统一给业务</small></div><div class="ix-code">${s.transport==="sse"?"{ type: 'delta', text: '...' }\n{ type: 'done', usage: ... }":"{ data, error, traceId }\nsnake_case → camelCase"}</div><div class="ix-banner">${s.transport==="sse"?"支持 abort · 解析半包 · done":"401 单航班刷新 · 幂等重试"}</div></div></div>`;
-    },
-    rbac(root,s){
-      const items=["登录取权限","路由守卫","组件权限","伪造请求","后端校验","审计"],canDelete=s.perms.includes("kb:delete");
-      root.innerHTML=flow(items,s.p,completed(s,items.length))+`<div class="ix-grid">
-      <div class="ix-card${state(s.p===1,"hot")}"><div class="ix-lock">🚪</div><div class="ix-head">路由层 <small>kb:view</small></div><div class="ix-node ${s.perms.includes("kb:view")?"good":"bad"}">${s.perms.includes("kb:view")?"✓ 放行 /knowledge":"✕ 跳转 /403"}</div></div>
-      <div class="ix-card${state(s.p===2,"hot")}"><div class="ix-lock">🧩</div><div class="ix-head">组件层 <small>kb:delete</small></div><div class="ix-node ${canDelete?"good":"ix-dim"}">${canDelete?"🗑 删除按钮可见":"删除按钮不渲染"}</div></div>
-      <div class="ix-card${state(s.p===4,s.blocked?"bad":"hot")}${state(s.p>=5,"good")}"><div class="ix-lock">🛡️</div><div class="ix-head">API 层 <small>安全边界</small></div><div class="ix-log">${s.blocked?'<b style="color:var(--bad)">403 Forbidden</b><br>缺少 kb:delete · 已记录':s.attack?"收到手工伪造的 DELETE 请求…":s.p>=5?'<b style="color:var(--micro)">200 OK</b><br>校验租户与资源归属':"等待请求"}</div></div></div>
-      <div class="ix-banner${s.blocked?" warn":s.done?" good":""}">${s.done?"审计：user_42 删除 tenant_A / kb_12 · trace_8fd2":s.attack?"前端可被绕过 → 必须依赖后端判权":"权限最小化 · 默认拒绝"}</div>`;
-    }
-  };
-  DATA.forEach((d,idx)=>window.SCENES.push({id:d.id,title:d.title,cat:d.cat,css:idx===0?CSS:"",html:`<div class="scene-${d.id} interview-flow"></div>`,steps:d.steps,apply(root,i){renderers[d.kind](root,this.steps[i]);}}));
-})([{"id":"ai-token-stream","title":"AI Token 流式渲染与中断","cat":"AI","kind":"stream","steps":[{"p":0,"t":"","q":[],"status":"待发送","n":"用户点击发送后，前端创建 <b>AbortController</b>，并把 signal 绑定到本次流式请求。每个会话只保留自己的控制器。"},{"p":1,"t":"","q":[],"status":"连接中","n":"服务端建立 <span class=\"hl-micro\">SSE / fetch stream</span>，先返回响应头，连接保持打开。这里不是等整段答案生成完再返回。"},{"p":2,"t":"你","q":["好"],"status":"接收 chunk","n":"网络层收到的通常是 <b>chunk</b>，它不保证刚好等于一个完整 Token 或一行 JSON，所以先进入 buffer 做增量解码。"},{"p":3,"t":"你好，","q":["我是","你的"],"status":"批量刷新","n":"不要每来一个 Token 就 setState。先把片段放进队列，再用 <b>requestAnimationFrame</b> 或小时间片合并刷新，降低重渲染频率。"},{"p":4,"t":"你好，我是你的 AI 面试助手。","q":[],"status":"渲染完成","n":"一帧只提交一次合并后的文本，React 只做必要更新。Markdown 可采用增量解析，代码块尚未闭合时先按纯文本展示。"},{"p":5,"t":"你好，我是你的 AI 面试助手。","q":[],"status":"已中断","abort":true,"n":"用户切换会话或点“停止生成”时调用 <b>abort()</b>：浏览器停止读取，服务端监听断连后也应取消模型任务，避免继续计费。"},{"p":6,"t":"你好，我是你的 AI 面试助手。","q":[],"status":"闭环完成","done":true,"n":"高分回答闭环：<b>流式连接 → 分片解码 → 帧级合并渲染 → 异常兜底 → 双端中断</b>。指标看首 Token 延迟、渲染次数和中断后的资源释放。"}]},{"id":"context-window","title":"上下文 Token：滑动窗口与摘要压缩","cat":"AI","kind":"context","steps":[{"used":28,"phase":0,"n":"上下文不是只算用户问题，还包括 <b>System Prompt、历史消息、工具结果、当前输入和预留输出</b>。请求前必须统一估算。"},{"used":63,"phase":1,"n":"长会话持续追加历史，Token 使用量不断上升。前端展示估算值，后端应使用模型对应 tokenizer 做最终校验。"},{"used":91,"phase":2,"n":"接近阈值时不能简单截掉最早消息，否则会丢失用户偏好和任务约束。先识别必须保留的信息。"},{"used":91,"phase":3,"n":"触发压缩：把较老的多轮对话交给摘要器，产出结构化摘要——目标、已确认事实、未完成事项、关键实体。"},{"used":54,"phase":4,"n":"用一条短摘要替换旧历史，同时始终保留 <b>System Prompt + 最近 N 轮原文 + 当前问题</b>，上下文重新落回安全区。"},{"used":61,"phase":5,"n":"下一轮继续在“摘要 + 近期原文”上推理。摘要要带版本和来源消息范围，必要时可回查原始记录，避免摘要漂移。"},{"used":61,"phase":6,"n":"高分点：同时说清 <b>预算公式、触发阈值、保留策略、摘要结构、可追溯性</b>，这比“超长就截断”更像真实落地。"}]},{"id":"react-skill-flow","title":"ReAct 循环与业务 Skill 设计","cat":"AI","kind":"skill","steps":[{"p":0,"loop":0,"n":"用户问“这份合同里退款条款是什么”。Agent 先理解目标，并不是立刻编一段最终答案。"},{"p":1,"loop":1,"n":"<b>Reason</b>：判断需要先校验权限，再检索知识库。推理状态应留在编排层，不把敏感思维过程原样暴露给前端。"},{"p":2,"loop":1,"skill":"权限校验","n":"<b>Act</b>：从 Skill Registry 选择“权限校验”。Skill 固化了入参 schema、权限边界、工具调用和结构化返回。"},{"p":3,"loop":1,"obs":"允许访问 tenant_A / kb_12","n":"<b>Observe</b>：工具返回可验证结果。Agent 把观察结果加入运行态，决定是否进入下一轮。"},{"p":1,"loop":2,"n":"第 2 轮 Reason：已有权限结果，现在需要检索并定位原文，而不是重复让模型自由发挥。"},{"p":2,"loop":2,"skill":"知识库检索","n":"调用“知识库检索” Skill：统一 query、tenantId、topK，并规定返回 chunk、文档位置和置信度。"},{"p":3,"loop":2,"obs":"命中第 8 页 · 退款条款 · score 0.91","n":"观察检索结果；低置信度时可改写查询重试，高置信度则进入文档定位或生成。"},{"p":4,"loop":2,"done":true,"n":"最终答案引用原文位置，并保留调用轨迹。高分点：<b>Skill 是可复用能力边界；ReAct 是动态选择能力的循环</b>，两者不是一个概念。"}]},{"id":"tenant-runtime","title":"单镜像多租户：运行时主题与 Feature Flag","cat":"工程化","kind":"tenant","steps":[{"p":0,"tenant":"默认","color":"#4f8cff","n":"构建阶段只产出 <b>一套通用镜像</b>：公共核心、平台业务和租户扩展点都在同一版本体系里。"},{"p":1,"tenant":"tenant-acme","color":"#4f8cff","n":"请求进入后，根据域名或租户标识解析 tenantId。不要把客户名写死在构建环境变量里。"},{"p":2,"tenant":"Acme 医疗","color":"#12b981","flags":["知识库","审计日志"],"n":"应用启动拉取租户配置：Logo、主题 Token、路由能力、Feature Flag 和扩展模块清单，并做缓存与版本校验。"},{"p":3,"tenant":"Acme 医疗","color":"#12b981","flags":["知识库","审计日志"],"n":"把品牌色写入 CSS Variables，Tailwind 组件统一消费语义变量；切主题不需要重新编译 CSS。"},{"p":4,"tenant":"Acme 医疗","color":"#12b981","flags":["知识库","审计日志"],"hidden":"场景编排","n":"路由和组件读取 Feature Flag。隐藏只是体验层，后端仍按租户权限校验接口，不能把 Flag 当安全边界。"},{"p":5,"tenant":"Acme 医疗","color":"#12b981","flags":["知识库","审计日志"],"chunk":"medical-report.js","n":"租户专属能力通过 <b>dynamic import</b> 按需加载；未启用的客户不下载对应 chunk，保持首包稳定。"},{"p":6,"tenant":"Acme 医疗","color":"#12b981","flags":["知识库","审计日志"],"chunk":"medical-report.js","done":true,"n":"最终形成：<b>单镜像交付、运行时换肤、配置化开关、扩展层按需分包</b>。量化时用镜像数量、发布时长、首包体积和运维工时说收益。"}]},{"id":"next-request-chain","title":"Next.js Middleware、SSR 与 Hydration 请求链路","cat":"工程化","kind":"next","steps":[{"p":0,"n":"浏览器请求租户后台页面。SSR 的目标不是“所有页面都上服务端”，而是为首屏和 SEO 需要提前生成 HTML。"},{"p":1,"n":"请求先经过 <b>Middleware</b>：读取 cookie、识别租户、做轻量重定向或改写。它适合请求级决策，不适合塞重数据库逻辑。"},{"p":2,"deny":true,"n":"未登录时 Middleware 直接返回 302 到登录页，请求不会继续进入页面渲染。注意真正的数据权限仍要在服务端接口校验。"},{"p":2,"n":"已登录则把 tenantId / traceId 等上下文传给后续路由，进入 Server Component 或 SSR 页面。"},{"p":3,"n":"服务端并行获取首屏数据并渲染 HTML。能在服务端完成的数据不要再让客户端重复请求一次。"},{"p":4,"n":"浏览器先收到可见 HTML，LCP 通常更早；随后下载必要的 JS，而不是等整个 SPA bundle 执行后才出现内容。"},{"p":5,"n":"Hydration 绑定事件和客户端状态，页面开始可交互。要避免服务端和客户端首屏输出不一致造成 hydration warning。"},{"p":6,"done":true,"n":"高分回答要带边界：<b>Middleware 做请求拦截；SSR 提前出 HTML；Hydration 接管交互</b>。收益用 LCP、TTFB、JS 体积和 SEO 数据衡量。"}]},{"id":"axios-sse-pipeline","title":"统一请求层：Axios 拦截器与 SSE 分流","cat":"工程化","kind":"axios","steps":[{"p":0,"transport":"json","n":"业务组件只传领域参数，不关心鉴权头、命名转换、重试和错误提示。统一请求层把这些横切关注点收口。"},{"p":1,"transport":"json","n":"请求拦截器注入 Token、tenantId、traceId，并把 camelCase 请求体转换为 snake_case。转换要跳过 FormData、Blob 等特殊类型。"},{"p":2,"transport":"json","n":"普通 JSON 请求进入 Axios transport；幂等 GET 可按策略重试，写操作默认不能盲目重试，除非带幂等键。"},{"p":3,"transport":"json","n":"响应拦截器把 snake_case 转回 camelCase，统一业务错误；401 只允许一个刷新 Token 请求，其余失败请求排队等待，避免刷新风暴。"},{"p":2,"transport":"sse","n":"流式对话走独立 SSE / fetch 分支，因为 Axios 在浏览器里不适合直接消费 ReadableStream。共用鉴权、trace 和错误模型，但不强行共用 transport。"},{"p":4,"transport":"sse","n":"SSE 分支负责增量解码、消息协议、AbortController 和结束标记，再向上层发标准事件。"},{"p":5,"transport":"sse","done":true,"n":"高分点是“<b>统一契约，不统一一切</b>”：JSON 与 Stream 共用策略层，各自保留合适的传输实现；重试、401、取消都有明确边界。"}]},{"id":"rbac-defense","title":"RBAC：路由、组件、接口三层权限闭环","cat":"工程化","kind":"rbac","steps":[{"p":0,"perms":[],"n":"登录后后端返回当前用户的角色和权限标识，例如 kb:view、kb:delete。前端不自行推导“管理员大概能做什么”。"},{"p":1,"perms":["kb:view"],"n":"路由守卫检查页面权限。没有 kb:view 就跳 403；有权限才加载页面 chunk，减少无意义资源下载。"},{"p":2,"perms":["kb:view"],"n":"组件级权限控制按钮和入口：无 kb:delete 时不渲染删除按钮。这是体验优化，避免误操作。"},{"p":3,"perms":["kb:view"],"attack":true,"n":"用户仍可绕过前端，手工构造 DELETE 请求。所以“按钮隐藏”绝不等于安全。"},{"p":4,"perms":["kb:view"],"attack":true,"blocked":true,"n":"后端接口再次校验 tenantId、资源归属和 kb:delete，返回 403。真正的安全边界永远在服务端。"},{"p":5,"perms":["kb:view","kb:delete"],"n":"授权用户操作时，前端展示入口，后端验证通过，并记录谁在何时删除了哪个租户的资源。"},{"p":6,"perms":["kb:view","kb:delete"],"done":true,"n":"完整闭环：<b>权限数据来自后端 → 路由拦截 → 组件收口 → 接口强校验 → 审计日志</b>。多租户场景还必须校验资源归属，防止横向越权。"}]}],"\n.interview-flow{font-size:13px}.interview-flow .ix-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px}.interview-flow .ix-grid.two{grid-template-columns:repeat(2,minmax(0,1fr))}.interview-flow .ix-card{background:var(--panel);border:1px solid var(--line);border-radius:13px;padding:13px;box-shadow:var(--shadow);min-width:0}.interview-flow .ix-card.hot{border-color:var(--sync);box-shadow:0 0 0 2px rgba(79,140,255,.18),var(--shadow)}.interview-flow .ix-card.good{border-color:var(--micro);box-shadow:0 0 0 2px rgba(34,197,94,.13),var(--shadow)}.interview-flow .ix-card.warn{border-color:var(--macro)}.interview-flow .ix-card.bad{border-color:var(--bad)}.interview-flow .ix-head{display:flex;align-items:center;gap:8px;font-weight:750;margin-bottom:9px}.interview-flow .ix-head small{margin-left:auto;color:var(--sub);font-weight:500}.interview-flow .ix-node{border:1px solid var(--line);background:var(--panel2);border-radius:10px;padding:9px 10px;color:var(--sub);transition:.25s;position:relative}.interview-flow .ix-node+.ix-node{margin-top:7px}.interview-flow .ix-node.on{color:#fff;border-color:var(--sync);background:rgba(79,140,255,.15);transform:translateY(-1px)}.interview-flow .ix-node.good{color:#d8ffe5;border-color:var(--micro);background:rgba(34,197,94,.12)}.interview-flow .ix-node.warn{color:#ffe8b5;border-color:var(--macro);background:rgba(245,158,11,.12)}.interview-flow .ix-node.bad{color:#ffd5d5;border-color:var(--bad);background:rgba(239,68,68,.12)}.interview-flow .ix-flow{display:flex;align-items:stretch;gap:8px;overflow-x:auto;padding:3px 1px 10px}.interview-flow .ix-flow .ix-node{flex:1 0 112px;display:flex;align-items:center;justify-content:center;text-align:center;min-height:58px;margin:0}.interview-flow .ix-flow .ix-arr{align-self:center;color:#596273;font-size:18px}.interview-flow .ix-chip{display:inline-flex;align-items:center;border:1px solid var(--line);background:var(--panel2);border-radius:999px;padding:5px 9px;margin:3px;color:var(--sub);animation:ix-pop .3s ease both}.interview-flow .ix-chip.on{border-color:var(--sync);color:#fff;background:rgba(79,140,255,.14)}.interview-flow .ix-chip.good{border-color:var(--micro);color:#d8ffe5;background:rgba(34,197,94,.12)}.interview-flow .ix-code{font-family:\"SFMono-Regular\",Consolas,monospace;font-size:12px;line-height:1.7;background:#101319;border:1px solid var(--line);border-radius:9px;padding:9px;white-space:pre-wrap;word-break:break-word}.interview-flow .ix-log{min-height:80px;background:#101319;border:1px solid var(--line);border-radius:9px;padding:9px;color:var(--sub);line-height:1.65}.interview-flow .ix-log b{color:var(--txt)}.interview-flow .ix-meter{height:12px;border-radius:99px;background:#0d1015;border:1px solid var(--line);overflow:hidden;margin:8px 0}.interview-flow .ix-meter>i{display:block;height:100%;background:linear-gradient(90deg,var(--sync),var(--micro));transition:width .4s ease}.interview-flow .ix-meter>i.warn{background:linear-gradient(90deg,var(--macro),var(--bad))}.interview-flow .ix-kpi{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px}.interview-flow .ix-kpi span{flex:1 1 110px;border:1px solid var(--line);background:var(--panel2);border-radius:9px;padding:8px;text-align:center;color:var(--sub)}.interview-flow .ix-kpi b{display:block;color:#fff;font-size:16px;margin-bottom:2px}.interview-flow .ix-banner{border:1px dashed var(--line);border-radius:11px;padding:10px 12px;color:var(--sub);margin-top:10px}.interview-flow .ix-banner.good{border-color:var(--micro);background:rgba(34,197,94,.08);color:#d8ffe5}.interview-flow .ix-banner.warn{border-color:var(--macro);background:rgba(245,158,11,.08);color:#ffe8b5}.interview-flow .ix-lock{font-size:22px;text-align:center;margin-bottom:4px}.interview-flow .ix-dim{opacity:.35;filter:saturate(.35)}@keyframes ix-pop{from{opacity:0;transform:translateY(5px) scale(.97)}to{opacity:1;transform:none}}@keyframes ix-pulse{50%{box-shadow:0 0 0 5px rgba(79,140,255,.08)}}.interview-flow .ix-pulse{animation:ix-pulse 1.2s ease infinite}@media(max-width:900px){.interview-flow .ix-grid,.interview-flow .ix-grid.two{grid-template-columns:1fr}.interview-flow .ix-flow .ix-node{flex-basis:100px;min-height:50px}.interview-flow{font-size:12px}}\n");
-</script>
+<link rel="stylesheet" href="assets/interview-scenes.css">
+<script src="assets/interview-scenes.js"></script>
 <script>
 (function(){
   if('scrollRestoration' in history){ try{ history.scrollRestoration='manual'; }catch(e){} }

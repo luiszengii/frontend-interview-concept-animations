@@ -55,6 +55,62 @@
       "updatedAt": "2026-07-14"
     },
     {
+      "id": "js-var-let-tdz",
+      "title": "var、let、const 的提升、TDZ 与块级作用域有什么区别？",
+      "questionType": "concept",
+      "track": "JS 基础",
+      "difficulty": "core",
+      "prompt": "请分别用两个独立代码片段说明声明前访问和离开代码块后的行为，为什么不能把 ReferenceError 后面的输出当成同一次执行？",
+      "answerOutline": [
+        "var 声明会提升并初始化为 undefined；let/const 在声明执行前处于暂时性死区，访问会抛出 ReferenceError。",
+        "var 不形成块级作用域；let/const 只在所属代码块内可见。",
+        "未捕获的 ReferenceError 会中止当前脚本，作用域实验应作为另一段独立代码运行。"
+      ],
+      "tags": [
+        "var",
+        "let",
+        "const",
+        "TDZ",
+        "scope"
+      ],
+      "animationSceneId": "scope-tdz",
+      "sources": [
+        "mdn-let-tdz"
+      ],
+      "companyOccurrences": [],
+      "sourceStatus": "verified",
+      "createdAt": "2026-07-14",
+      "updatedAt": "2026-07-14"
+    },
+    {
+      "id": "js-deep-copy",
+      "title": "浅拷贝、深拷贝与 structuredClone 如何选择？",
+      "questionType": "scenario",
+      "track": "JS 基础",
+      "difficulty": "core",
+      "prompt": "对象包含嵌套引用、Date、Map 或循环引用时，展开运算符、JSON 序列化和 structuredClone 分别会怎样？",
+      "answerOutline": [
+        "展开运算符只复制第一层，嵌套对象仍共享引用。",
+        "JSON 序列化会丢失或改变部分类型，并在循环引用上抛出 TypeError。",
+        "structuredClone 支持循环引用和多种结构化可克隆类型，但函数等不可克隆值仍会抛出 DataCloneError。"
+      ],
+      "tags": [
+        "deep copy",
+        "shallow copy",
+        "structuredClone",
+        "circular reference"
+      ],
+      "animationSceneId": "deep-copy",
+      "sources": [
+        "mdn-cyclic-json",
+        "mdn-structured-clone"
+      ],
+      "companyOccurrences": [],
+      "sourceStatus": "verified",
+      "createdAt": "2026-07-14",
+      "updatedAt": "2026-07-14"
+    },
+    {
       "id": "react-diff-key",
       "title": "React Diff 为什么不推荐使用 index 作为 key？",
       "questionType": "concept",
@@ -179,7 +235,10 @@
       ],
       "animationSceneId": "ai-token-stream",
       "sources": [
-        "mdn-sse"
+        "mdn-sse",
+        "mdn-text-decoder-decode",
+        "mdn-abort-controller",
+        "mdn-request-animation-frame"
       ],
       "companyOccurrences": [],
       "sourceStatus": "verified",
@@ -195,8 +254,8 @@
       "prompt": "超过模型窗口前，如何保留关键信息并控制成本？",
       "answerOutline": [
         "预算同时包含 system prompt、历史、工具结果、当前输入和输出预留。",
-        "达到阈值时保留系统指令与最近对话，把旧消息压缩成结构化摘要。",
-        "摘要记录来源范围和版本，必要时可回查原文，避免不可追溯的摘要漂移。"
+        "达到阈值时可以调用模型提供的 compaction；如果业务需要可审计摘要，则由应用保留系统指令与最近对话，把旧消息压缩成结构化摘要。",
+        "应用自建摘要应记录来源范围和版本，必要时可回查原文；模型提供的 opaque compaction item 不等同于可读摘要。"
       ],
       "tags": [
         "Token",
@@ -206,10 +265,11 @@
       ],
       "animationSceneId": "context-window",
       "sources": [
-        "react-recover-paper"
+        "openai-token-counting",
+        "openai-compaction"
       ],
       "companyOccurrences": [],
-      "sourceStatus": "needs-source-review",
+      "sourceStatus": "verified",
       "createdAt": "2026-07-14",
       "updatedAt": "2026-07-14"
     },
@@ -222,7 +282,7 @@
       "prompt": "如何为知识库检索、文档定位、权限校验设计可复用 Skill？",
       "answerOutline": [
         "ReAct 是 Agent 在 Reason、Act、Observe 间循环并决定下一步动作的编排模式。",
-        "Skill 是封装能力边界：入参 schema、工具调用、权限限制和结构化返回。",
+        "Skill 是带 SKILL.md 的版本化能力包；在业务约定中继续声明入参 schema、工具调用、权限限制和结构化返回。",
         "记录调用轨迹、置信度和终止条件，避免把自由推理直接当成业务结果。"
       ],
       "tags": [
@@ -233,7 +293,8 @@
       ],
       "animationSceneId": "react-skill-flow",
       "sources": [
-        "react-recover-paper"
+        "react-recover-paper",
+        "openai-skills"
       ],
       "companyOccurrences": [],
       "sourceStatus": "verified",
@@ -261,34 +322,40 @@
       ],
       "animationSceneId": "tenant-runtime",
       "sources": [
-        "next-middleware"
+        "mdn-css-custom-properties",
+        "mdn-dynamic-import",
+        "next-multi-tenant",
+        "vercel-feature-flags"
       ],
       "companyOccurrences": [],
-      "sourceStatus": "needs-source-review",
+      "sourceStatus": "verified",
       "createdAt": "2026-07-14",
       "updatedAt": "2026-07-14"
     },
     {
       "id": "next-ssr-middleware",
-      "title": "Next.js Middleware、SSR 与 Hydration 的职责边界",
+      "title": "Next.js Proxy（原 Middleware）、SSR 与 Hydration 的职责边界",
       "questionType": "scenario",
       "track": "工程化",
       "difficulty": "project",
       "prompt": "租户后台如何在请求阶段鉴权、服务端渲染首屏、客户端接管交互？",
       "answerOutline": [
-        "Middleware 适合 cookie、租户识别、轻量重定向和改写，不放重数据库操作。",
+        "Next.js 16 起 middleware 文件约定已改名为 proxy；它适合 cookie、租户识别、轻量重定向和改写，不放重数据库操作。",
         "SSR 或 Server Components 并行准备首屏 HTML 和数据。",
         "浏览器先显示 HTML，再 hydration 绑定交互；关注服务端与客户端输出一致性。"
       ],
       "tags": [
         "Next.js",
+        "Proxy",
         "Middleware",
         "SSR",
         "Hydration"
       ],
       "animationSceneId": "next-request-chain",
       "sources": [
-        "next-middleware"
+        "next-middleware",
+        "next-server-client-components",
+        "react-hydrate-root"
       ],
       "companyOccurrences": [],
       "sourceStatus": "verified",
@@ -316,7 +383,9 @@
       "animationSceneId": "axios-sse-pipeline",
       "sources": [
         "axios-interceptors",
-        "mdn-sse"
+        "mdn-sse",
+        "mdn-text-decoder-stream",
+        "mdn-abort-controller"
       ],
       "companyOccurrences": [],
       "sourceStatus": "verified",
@@ -343,10 +412,10 @@
       ],
       "animationSceneId": "rbac-defense",
       "sources": [
-        "next-middleware"
+        "owasp-authorization"
       ],
       "companyOccurrences": [],
-      "sourceStatus": "needs-source-review",
+      "sourceStatus": "verified",
       "createdAt": "2026-07-14",
       "updatedAt": "2026-07-14"
     },

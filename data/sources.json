@@ -59,9 +59,9 @@
     },
     {
       "id": "next-middleware",
-      "title": "Middleware",
+      "title": "proxy.js（原 Middleware 文件约定）",
       "publisher": "Next.js",
-      "url": "https://nextjs.org/docs/app/building-your-application/routing/middleware",
+      "url": "https://nextjs.org/docs/app/api-reference/file-conventions/proxy",
       "kind": "official-docs"
     },
     {
@@ -90,6 +90,125 @@
       "title": "Understanding GitHub Actions",
       "publisher": "GitHub Docs",
       "url": "https://docs.github.com/actions/learn-github-actions/understanding-github-actions",
+      "kind": "official-docs"
+    },
+    {
+      "id": "mdn-let-tdz",
+      "title": "let：暂时性死区与块级作用域",
+      "publisher": "MDN Web Docs",
+      "url": "https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Statements/let",
+      "kind": "official-docs"
+    },
+    {
+      "id": "mdn-cyclic-json",
+      "title": "TypeError: cyclic object value",
+      "publisher": "MDN Web Docs",
+      "url": "https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Errors/Cyclic_object_value",
+      "kind": "official-docs"
+    },
+    {
+      "id": "mdn-structured-clone",
+      "title": "Window: structuredClone() method",
+      "publisher": "MDN Web Docs",
+      "url": "https://developer.mozilla.org/en-US/docs/Web/API/Window/structuredClone",
+      "kind": "official-docs"
+    },
+    {
+      "id": "mdn-text-decoder-stream",
+      "title": "TextDecoderStream",
+      "publisher": "MDN Web Docs",
+      "url": "https://developer.mozilla.org/en-US/docs/Web/API/TextDecoderStream",
+      "kind": "official-docs"
+    },
+    {
+      "id": "mdn-text-decoder-decode",
+      "title": "TextDecoder: decode() method",
+      "publisher": "MDN Web Docs",
+      "url": "https://developer.mozilla.org/en-US/docs/Web/API/TextDecoder/decode",
+      "kind": "official-docs"
+    },
+    {
+      "id": "mdn-abort-controller",
+      "title": "AbortController",
+      "publisher": "MDN Web Docs",
+      "url": "https://developer.mozilla.org/en-US/docs/Web/API/AbortController",
+      "kind": "official-docs"
+    },
+    {
+      "id": "mdn-request-animation-frame",
+      "title": "Window: requestAnimationFrame() method",
+      "publisher": "MDN Web Docs",
+      "url": "https://developer.mozilla.org/en-US/docs/Web/API/Window/requestAnimationFrame",
+      "kind": "official-docs"
+    },
+    {
+      "id": "openai-token-counting",
+      "title": "How to count tokens with Tiktoken",
+      "publisher": "OpenAI Cookbook",
+      "url": "https://developers.openai.com/cookbook/examples/how_to_count_tokens_with_tiktoken",
+      "kind": "official-docs"
+    },
+    {
+      "id": "openai-compaction",
+      "title": "Compaction",
+      "publisher": "OpenAI",
+      "url": "https://developers.openai.com/api/docs/guides/compaction",
+      "kind": "official-docs"
+    },
+    {
+      "id": "openai-skills",
+      "title": "Skills",
+      "publisher": "OpenAI",
+      "url": "https://developers.openai.com/api/docs/guides/tools-skills",
+      "kind": "official-docs"
+    },
+    {
+      "id": "mdn-css-custom-properties",
+      "title": "Using CSS custom properties",
+      "publisher": "MDN Web Docs",
+      "url": "https://developer.mozilla.org/en-US/docs/Web/CSS/Guides/Cascading_variables/Using_custom_properties",
+      "kind": "official-docs"
+    },
+    {
+      "id": "mdn-dynamic-import",
+      "title": "import()",
+      "publisher": "MDN Web Docs",
+      "url": "https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Operators/import",
+      "kind": "official-docs"
+    },
+    {
+      "id": "next-multi-tenant",
+      "title": "How to build multi-tenant apps in Next.js",
+      "publisher": "Next.js",
+      "url": "https://nextjs.org/docs/app/guides/multi-tenant",
+      "kind": "official-docs"
+    },
+    {
+      "id": "vercel-feature-flags",
+      "title": "Feature Flags",
+      "publisher": "Vercel",
+      "url": "https://vercel.com/docs/flags",
+      "kind": "official-docs"
+    },
+    {
+      "id": "next-server-client-components",
+      "title": "Server and Client Components",
+      "publisher": "Next.js",
+      "url": "https://nextjs.org/docs/app/getting-started/server-and-client-components",
+      "kind": "official-docs"
+    },
+    {
+      "id": "react-hydrate-root",
+      "title": "hydrateRoot",
+      "publisher": "React",
+      "url": "https://react.dev/reference/react-dom/client/hydrateRoot",
+      "kind": "official-docs"
+    },
+    {
+      "id": "owasp-authorization",
+      "title": "Authorization Cheat Sheet",
+      "publisher": "OWASP",
+      "url": "https://cheatsheetseries.owasp.org/cheatsheets/Authorization_Cheat_Sheet.html",
       "kind": "official-docs"
     }
   ]
