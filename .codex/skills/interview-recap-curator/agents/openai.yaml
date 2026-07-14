@@ -1,0 +1,4 @@
+interface:
+  display_name: "面试复盘题库维护"
+  short_description: "把每次面试复盘整理为带来源、公司和次数的可维护题库记录"
+  default_prompt: "Use $interview-recap-curator to turn my latest interview recap into tagged, sourced question records."

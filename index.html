@@ -155,6 +155,7 @@
 <div id="topbar">
   <button id="navToggle" title="收起/展开概念栏">☰</button>
   <span class="brand">🎯 明日面试 · 概念动画强化版</span>
+  <a class="xlink" href="question-bank.html">📚 题库 / 复盘</a>
   <span class="sinfo" id="sinfo"></span>
 </div>
 <aside id="side"></aside>
@@ -6865,7 +6866,9 @@ read cookie → tenant → rewrite</div><div class="ix-banner${s.deny?" warn":""
     if(ticking) return; ticking=true;
     requestAnimationFrame(function(){ ticking=false; pickActive(); });
   },{passive:true});
-  load(0);
+  const hashId=decodeURIComponent(location.hash.replace(/^#/,''));
+  const initialIndex=SCENES.findIndex(s=>s.id===hashId);
+  load(initialIndex>=0?initialIndex:0);
 })();
 </script>
 </body>

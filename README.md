@@ -1,8 +1,13 @@
-# 前端面试概念动画
+# 前端面试知识库
 
-一个面向前端面试复习的滚动叙事动画站。它把 Event Loop、React Diff、SSE 流式通信、RAG、Next.js、多租户、RBAC 等抽象概念，拆成可以逐步滚动观察的状态变化。
+一个可持续维护的前端面试知识库：概念动画负责解释，题库负责沉淀八股题与场景题，复盘记录保存公司、出现次数和原始问题，来源数据让每个答案可查询。
 
 ## 项目特点
+
+- 动画入口：[index.html](index.html)
+- 题库与复盘入口：[question-bank.html](question-bank.html)
+- data/ 保存题目、技术出处和面试复盘的单一事实来源
+- .codex/skills/interview-recap-curator/ 是持续录入复盘的 Codex Skill 源码
 
 - 34 组概念动画，覆盖 JavaScript、React、工程化、网络性能与 AI 前端
 - 51 个针对真实项目追问新增的强化步骤

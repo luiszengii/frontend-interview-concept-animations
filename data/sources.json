@@ -1,0 +1,96 @@
+{
+  "schemaVersion": 1,
+  "sources": [
+    {
+      "id": "mdn-event-loop",
+      "title": "In depth: Microtasks and the JavaScript runtime environment",
+      "publisher": "MDN Web Docs",
+      "url": "https://developer.mozilla.org/en-US/docs/Web/API/HTML_DOM_API/Microtask_guide/In_depth",
+      "kind": "official-docs"
+    },
+    {
+      "id": "mdn-promise",
+      "title": "Using promises",
+      "publisher": "MDN Web Docs",
+      "url": "https://developer.mozilla.org/en-US/docs/Web/JavaScript/Guide/Using_promises",
+      "kind": "official-docs"
+    },
+    {
+      "id": "mdn-weakmap",
+      "title": "WeakMap",
+      "publisher": "MDN Web Docs",
+      "url": "https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/WeakMap",
+      "kind": "official-docs"
+    },
+    {
+      "id": "react-hooks",
+      "title": "Rules of Hooks",
+      "publisher": "React",
+      "url": "https://react.dev/reference/rules/rules-of-hooks",
+      "kind": "official-docs"
+    },
+    {
+      "id": "react-keys",
+      "title": "Rendering Lists: Keeping list items in order with key",
+      "publisher": "React",
+      "url": "https://react.dev/learn/rendering-lists#keeping-list-items-in-order-with-key",
+      "kind": "official-docs"
+    },
+    {
+      "id": "mdn-sse",
+      "title": "Using server-sent events",
+      "publisher": "MDN Web Docs",
+      "url": "https://developer.mozilla.org/en-US/docs/Web/API/Server-sent_events/Using_server-sent_events",
+      "kind": "official-docs"
+    },
+    {
+      "id": "mdn-websocket",
+      "title": "WebSocket API",
+      "publisher": "MDN Web Docs",
+      "url": "https://developer.mozilla.org/en-US/docs/Web/API/WebSockets_API",
+      "kind": "official-docs"
+    },
+    {
+      "id": "react-recover-paper",
+      "title": "ReAct: Synergizing Reasoning and Acting in Language Models",
+      "publisher": "Princeton NLP",
+      "url": "https://arxiv.org/abs/2210.03629",
+      "kind": "paper"
+    },
+    {
+      "id": "next-middleware",
+      "title": "Middleware",
+      "publisher": "Next.js",
+      "url": "https://nextjs.org/docs/app/building-your-application/routing/middleware",
+      "kind": "official-docs"
+    },
+    {
+      "id": "axios-interceptors",
+      "title": "Interceptors",
+      "publisher": "Axios",
+      "url": "https://axios-http.com/docs/interceptors",
+      "kind": "official-docs"
+    },
+    {
+      "id": "web-vitals",
+      "title": "Web Vitals",
+      "publisher": "web.dev",
+      "url": "https://web.dev/articles/vitals",
+      "kind": "official-docs"
+    },
+    {
+      "id": "vue-reactivity",
+      "title": "Reactivity in Depth",
+      "publisher": "Vue",
+      "url": "https://vuejs.org/guide/extras/reactivity-in-depth.html",
+      "kind": "official-docs"
+    },
+    {
+      "id": "github-actions",
+      "title": "Understanding GitHub Actions",
+      "publisher": "GitHub Docs",
+      "url": "https://docs.github.com/actions/learn-github-actions/understanding-github-actions",
+      "kind": "official-docs"
+    }
+  ]
+}

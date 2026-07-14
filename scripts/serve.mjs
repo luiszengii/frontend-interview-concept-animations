@@ -1,27 +1,38 @@
 import { createServer } from "node:http";
-import { readFile } from "node:fs/promises";
+import { readFile, stat } from "node:fs/promises";
+import { extname, relative, resolve } from "node:path";
 
 const host = "127.0.0.1";
 const port = Number(process.env.PORT || 4173);
-const htmlUrl = new URL("../index.html", import.meta.url);
+const root = resolve(new URL("../", import.meta.url).pathname);
+const mime = {
+  ".css": "text/css; charset=utf-8",
+  ".html": "text/html; charset=utf-8",
+  ".js": "text/javascript; charset=utf-8",
+  ".json": "application/json; charset=utf-8",
+};
 
 const server = createServer(async (request, response) => {
-  if (request.url !== "/" && request.url !== "/index.html") {
-    response.writeHead(404, { "content-type": "text/plain; charset=utf-8" });
-    response.end("Not Found");
-    return;
-  }
-
   try {
-    const html = await readFile(htmlUrl);
+    const pathname = decodeURIComponent(new URL(request.url, "http://localhost").pathname);
+    const requested = pathname === "/" ? "index.html" : pathname.replace(/^\/+/, "");
+    const filePath = resolve(root, requested);
+    if (relative(root, filePath).startsWith("..")) {
+      response.writeHead(403, { "content-type": "text/plain; charset=utf-8" });
+      response.end("Forbidden");
+      return;
+    }
+    const info = await stat(filePath);
+    if (!info.isFile()) throw new Error("Not Found");
+    const body = await readFile(filePath);
     response.writeHead(200, {
-      "content-type": "text/html; charset=utf-8",
+      "content-type": mime[extname(filePath)] || "application/octet-stream",
       "cache-control": "no-store",
     });
-    response.end(html);
+    response.end(body);
   } catch (error) {
-    response.writeHead(500, { "content-type": "text/plain; charset=utf-8" });
-    response.end(`读取页面失败：${error.message}`);
+    response.writeHead(404, { "content-type": "text/plain; charset=utf-8" });
+    response.end("Not Found");
   }
 });
 

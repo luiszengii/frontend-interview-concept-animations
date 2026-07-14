@@ -1,0 +1,432 @@
+{
+  "schemaVersion": 1,
+  "questions": [
+    {
+      "id": "js-event-loop-order",
+      "title": "Event Loop 中宏任务、微任务的执行顺序是什么？",
+      "questionType": "concept",
+      "track": "JS 基础",
+      "difficulty": "core",
+      "prompt": "请解释同步代码、微任务、渲染和宏任务的执行顺序，并说明每轮为什么要清空微任务。",
+      "answerOutline": [
+        "先执行当前调用栈内的同步代码。",
+        "当前宏任务结束后清空微任务队列；微任务可能继续产生微任务。",
+        "浏览器有机会渲染，然后取下一个宏任务。",
+        "宏任务不是全部执行，而是一轮只取一个。"
+      ],
+      "tags": [
+        "Event Loop",
+        "microtask",
+        "macrotask",
+        "Promise"
+      ],
+      "animationSceneId": "event-loop",
+      "sources": [
+        "mdn-event-loop"
+      ],
+      "companyOccurrences": [],
+      "sourceStatus": "verified",
+      "createdAt": "2026-07-14",
+      "updatedAt": "2026-07-14"
+    },
+    {
+      "id": "react-hooks-top-level",
+      "title": "React Hooks 为什么不能写在 if 或循环中？",
+      "questionType": "concept",
+      "track": "React",
+      "difficulty": "core",
+      "prompt": "解释 Hook 调用顺序与状态映射的关系，并给出条件副作用的正确写法。",
+      "answerOutline": [
+        "React 按调用顺序关联每个 Hook 的状态。",
+        "条件或循环会让不同渲染的调用顺序、数量变化。",
+        "把 Hook 固定在组件顶层，把条件判断放进 Hook 回调或返回值处理。"
+      ],
+      "tags": [
+        "Hooks",
+        "useEffect",
+        "render"
+      ],
+      "sources": [
+        "react-hooks"
+      ],
+      "companyOccurrences": [],
+      "sourceStatus": "verified",
+      "createdAt": "2026-07-14",
+      "updatedAt": "2026-07-14"
+    },
+    {
+      "id": "react-diff-key",
+      "title": "React Diff 为什么不推荐使用 index 作为 key？",
+      "questionType": "concept",
+      "track": "React",
+      "difficulty": "core",
+      "prompt": "列表头部插入、删除或重排时，index key 会造成什么问题？",
+      "answerOutline": [
+        "key 用于标识同级元素的稳定身份。",
+        "index 在增删或重排后会把旧状态错误地匹配给新位置。",
+        "优先使用稳定、唯一的业务 ID。"
+      ],
+      "tags": [
+        "Diff",
+        "key",
+        "list rendering"
+      ],
+      "animationSceneId": "react-diff",
+      "sources": [
+        "react-keys"
+      ],
+      "companyOccurrences": [],
+      "sourceStatus": "verified",
+      "createdAt": "2026-07-14",
+      "updatedAt": "2026-07-14"
+    },
+    {
+      "id": "realtime-sse-websocket",
+      "title": "SSE 和 WebSocket 如何选择？",
+      "questionType": "scenario",
+      "track": "AI 前端",
+      "difficulty": "core",
+      "prompt": "AI 对话、在线协作和地图轨迹分别应选择什么通信方式？为什么？",
+      "answerOutline": [
+        "SSE 是服务端到客户端的单向 HTTP 流，适合 Token 输出与消息推送。",
+        "WebSocket 是双向全双工，适合协作编辑、双向聊天与高频互动。",
+        "AI 流式对话要说明断开、增量解码与渲染合并。"
+      ],
+      "tags": [
+        "SSE",
+        "WebSocket",
+        "streaming",
+        "AI"
+      ],
+      "animationSceneId": "realtime-comm",
+      "sources": [
+        "mdn-sse",
+        "mdn-websocket"
+      ],
+      "companyOccurrences": [],
+      "sourceStatus": "verified",
+      "createdAt": "2026-07-14",
+      "updatedAt": "2026-07-14"
+    },
+    {
+      "id": "promise-combinators",
+      "title": "Promise 的三态与 all、race、allSettled 的区别",
+      "questionType": "concept",
+      "track": "JS 基础",
+      "difficulty": "core",
+      "prompt": "并发批量查询时，什么时候应该选择 allSettled 而不是 Promise.all？",
+      "answerOutline": [
+        "Promise 状态为 pending、fulfilled、rejected，落定后不可逆。",
+        "all 任一失败即 reject；race 取最先落定的结果。",
+        "allSettled 等待所有任务结束，适合需要汇总成功和失败结果的批量查询。"
+      ],
+      "tags": [
+        "Promise",
+        "concurrency",
+        "allSettled"
+      ],
+      "sources": [
+        "mdn-promise"
+      ],
+      "companyOccurrences": [],
+      "sourceStatus": "verified",
+      "createdAt": "2026-07-14",
+      "updatedAt": "2026-07-14"
+    },
+    {
+      "id": "weakmap-cache",
+      "title": "WeakMap 与 Map 的核心区别和缓存场景",
+      "questionType": "concept",
+      "track": "JS 基础",
+      "difficulty": "core",
+      "prompt": "为什么 WeakMap 适合关联 DOM 或组件临时元数据？",
+      "answerOutline": [
+        "WeakMap 的键只能是对象，并以弱引用关联。",
+        "键对象不可达后可被垃圾回收，不因缓存本身强持有。",
+        "它没有 size 和遍历 API，因此不适合需要枚举的集合。"
+      ],
+      "tags": [
+        "WeakMap",
+        "GC",
+        "cache"
+      ],
+      "sources": [
+        "mdn-weakmap"
+      ],
+      "companyOccurrences": [],
+      "sourceStatus": "verified",
+      "createdAt": "2026-07-14",
+      "updatedAt": "2026-07-14"
+    },
+    {
+      "id": "ai-stream-abort",
+      "title": "AI 流式 Token 如何中断、解码并避免高频重渲染？",
+      "questionType": "scenario",
+      "track": "AI 前端",
+      "difficulty": "project",
+      "prompt": "用户切换会话时如何停止流？chunk 不是完整 Token 时如何处理？",
+      "answerOutline": [
+        "每次请求绑定独立 AbortController；切换会话或停止生成时 abort。",
+        "使用 TextDecoder 的流式解码和 buffer 处理半包、粘包。",
+        "把 delta 合并到队列，用 requestAnimationFrame 或时间片批量提交 UI。",
+        "服务端监听断连并取消模型任务，形成双端资源释放。"
+      ],
+      "tags": [
+        "SSE",
+        "AbortController",
+        "TextDecoder",
+        "performance"
+      ],
+      "animationSceneId": "ai-token-stream",
+      "sources": [
+        "mdn-sse"
+      ],
+      "companyOccurrences": [],
+      "sourceStatus": "verified",
+      "createdAt": "2026-07-14",
+      "updatedAt": "2026-07-14"
+    },
+    {
+      "id": "ai-context-compression",
+      "title": "长会话上下文 Token 如何计算和压缩？",
+      "questionType": "scenario",
+      "track": "AI 前端",
+      "difficulty": "project",
+      "prompt": "超过模型窗口前，如何保留关键信息并控制成本？",
+      "answerOutline": [
+        "预算同时包含 system prompt、历史、工具结果、当前输入和输出预留。",
+        "达到阈值时保留系统指令与最近对话，把旧消息压缩成结构化摘要。",
+        "摘要记录来源范围和版本，必要时可回查原文，避免不可追溯的摘要漂移。"
+      ],
+      "tags": [
+        "Token",
+        "context window",
+        "summary",
+        "cost"
+      ],
+      "animationSceneId": "context-window",
+      "sources": [
+        "react-recover-paper"
+      ],
+      "companyOccurrences": [],
+      "sourceStatus": "needs-source-review",
+      "createdAt": "2026-07-14",
+      "updatedAt": "2026-07-14"
+    },
+    {
+      "id": "react-skill-design",
+      "title": "ReAct 和业务 Skill 分别解决什么问题？",
+      "questionType": "scenario",
+      "track": "AI 前端",
+      "difficulty": "project",
+      "prompt": "如何为知识库检索、文档定位、权限校验设计可复用 Skill？",
+      "answerOutline": [
+        "ReAct 是 Agent 在 Reason、Act、Observe 间循环并决定下一步动作的编排模式。",
+        "Skill 是封装能力边界：入参 schema、工具调用、权限限制和结构化返回。",
+        "记录调用轨迹、置信度和终止条件，避免把自由推理直接当成业务结果。"
+      ],
+      "tags": [
+        "ReAct",
+        "Skill",
+        "Agent",
+        "RAG"
+      ],
+      "animationSceneId": "react-skill-flow",
+      "sources": [
+        "react-recover-paper"
+      ],
+      "companyOccurrences": [],
+      "sourceStatus": "verified",
+      "createdAt": "2026-07-14",
+      "updatedAt": "2026-07-14"
+    },
+    {
+      "id": "tenant-single-image",
+      "title": "多租户单镜像如何实现运行时主题和功能开关？",
+      "questionType": "scenario",
+      "track": "工程化",
+      "difficulty": "project",
+      "prompt": "如何平衡平台公共模块、租户个性化和首包体积？",
+      "answerOutline": [
+        "构建一套通用镜像，请求时按域名或标识解析租户。",
+        "初始化拉取品牌、CSS 变量、功能开关和扩展模块清单。",
+        "公共能力下沉到核心包，租户扩展通过配置和动态 import 按需加载。",
+        "Feature Flag 只控制体验，后端继续校验租户和资源权限。"
+      ],
+      "tags": [
+        "multi-tenant",
+        "Feature Flag",
+        "CSS variables",
+        "code splitting"
+      ],
+      "animationSceneId": "tenant-runtime",
+      "sources": [
+        "next-middleware"
+      ],
+      "companyOccurrences": [],
+      "sourceStatus": "needs-source-review",
+      "createdAt": "2026-07-14",
+      "updatedAt": "2026-07-14"
+    },
+    {
+      "id": "next-ssr-middleware",
+      "title": "Next.js Middleware、SSR 与 Hydration 的职责边界",
+      "questionType": "scenario",
+      "track": "工程化",
+      "difficulty": "project",
+      "prompt": "租户后台如何在请求阶段鉴权、服务端渲染首屏、客户端接管交互？",
+      "answerOutline": [
+        "Middleware 适合 cookie、租户识别、轻量重定向和改写，不放重数据库操作。",
+        "SSR 或 Server Components 并行准备首屏 HTML 和数据。",
+        "浏览器先显示 HTML，再 hydration 绑定交互；关注服务端与客户端输出一致性。"
+      ],
+      "tags": [
+        "Next.js",
+        "Middleware",
+        "SSR",
+        "Hydration"
+      ],
+      "animationSceneId": "next-request-chain",
+      "sources": [
+        "next-middleware"
+      ],
+      "companyOccurrences": [],
+      "sourceStatus": "verified",
+      "createdAt": "2026-07-14",
+      "updatedAt": "2026-07-14"
+    },
+    {
+      "id": "axios-stream-pipeline",
+      "title": "Axios 统一封装如何兼容普通请求和 SSE？",
+      "questionType": "scenario",
+      "track": "工程化",
+      "difficulty": "project",
+      "prompt": "如何实现命名转换、401 刷新、重试和流式请求分流？",
+      "answerOutline": [
+        "策略层统一 Token、tenantId、traceId、命名转换和错误模型。",
+        "普通 JSON 请求走 Axios；流式请求走 fetch/ReadableStream，避免强行共用不适合的 transport。",
+        "401 使用单航班刷新，幂等请求才按策略重试，流式请求使用 AbortController。"
+      ],
+      "tags": [
+        "Axios",
+        "interceptor",
+        "SSE",
+        "retry"
+      ],
+      "animationSceneId": "axios-sse-pipeline",
+      "sources": [
+        "axios-interceptors",
+        "mdn-sse"
+      ],
+      "companyOccurrences": [],
+      "sourceStatus": "verified",
+      "createdAt": "2026-07-14",
+      "updatedAt": "2026-07-14"
+    },
+    {
+      "id": "rbac-defense-depth",
+      "title": "RBAC 如何做到路由、组件、接口三层鉴权？",
+      "questionType": "scenario",
+      "track": "工程化",
+      "difficulty": "project",
+      "prompt": "如何阻止用户绕过隐藏按钮，直接手工调用越权接口？",
+      "answerOutline": [
+        "后端返回角色与权限标识，路由层拦截无页面权限的访问。",
+        "组件层只负责入口和体验收口。",
+        "后端接口必须再次校验操作权限、tenantId 与资源归属，并写审计日志。"
+      ],
+      "tags": [
+        "RBAC",
+        "authorization",
+        "tenant",
+        "audit"
+      ],
+      "animationSceneId": "rbac-defense",
+      "sources": [
+        "next-middleware"
+      ],
+      "companyOccurrences": [],
+      "sourceStatus": "needs-source-review",
+      "createdAt": "2026-07-14",
+      "updatedAt": "2026-07-14"
+    },
+    {
+      "id": "cls-diagnosis",
+      "title": "如何定位并优化 CLS 布局偏移？",
+      "questionType": "scenario",
+      "track": "性能·网络",
+      "difficulty": "project",
+      "prompt": "图片、图表和异步数据造成页面跳动时，如何形成定位—方案—收益闭环？",
+      "answerOutline": [
+        "通过 Lighthouse、Performance 或 Core Web Vitals 定位布局偏移。",
+        "为图片、图表和地图预留尺寸；异步内容使用骨架或固定容器。",
+        "复测 CLS 并记录影响最大的元素与收益。"
+      ],
+      "tags": [
+        "CLS",
+        "Core Web Vitals",
+        "Lighthouse"
+      ],
+      "animationSceneId": "web-vitals",
+      "sources": [
+        "web-vitals"
+      ],
+      "companyOccurrences": [],
+      "sourceStatus": "verified",
+      "createdAt": "2026-07-14",
+      "updatedAt": "2026-07-14"
+    },
+    {
+      "id": "vue-reactivity-comparison",
+      "title": "Vue 2、Vue 3 和 React 的状态更新设计差异",
+      "questionType": "concept",
+      "track": "框架对比",
+      "difficulty": "core",
+      "prompt": "从依赖追踪、更新触发和 UI 描述方式说明三者差异。",
+      "answerOutline": [
+        "Vue 2 以 Object.defineProperty 为核心，Vue 3 使用 Proxy 改善新增属性和集合类型追踪。",
+        "Vue 更倾向细粒度响应式依赖追踪，React 以 state 更新触发组件重新执行并比较 UI 描述。",
+        "比较时区分实现机制和开发模型，避免绝对化谁更快。"
+      ],
+      "tags": [
+        "Vue 2",
+        "Vue 3",
+        "React",
+        "reactivity"
+      ],
+      "sources": [
+        "vue-reactivity"
+      ],
+      "companyOccurrences": [],
+      "sourceStatus": "verified",
+      "createdAt": "2026-07-14",
+      "updatedAt": "2026-07-14"
+    },
+    {
+      "id": "cicd-openapi",
+      "title": "Git Hooks、OpenAPI 类型生成与 GitHub Actions 如何落地？",
+      "questionType": "scenario",
+      "track": "工程化",
+      "difficulty": "project",
+      "prompt": "如何把格式校验、接口类型同步和部署检查接入研发流程？",
+      "answerOutline": [
+        "提交前用 Hooks 执行聚焦的 lint、format 和类型检查。",
+        "以 OpenAPI 为契约生成类型与请求层，减少手写接口漂移。",
+        "GitHub Actions 在 PR 或 main 推送时运行相同校验，阻止未经验证的变更进入主线。"
+      ],
+      "tags": [
+        "CI/CD",
+        "OpenAPI",
+        "GitHub Actions",
+        "types"
+      ],
+      "sources": [
+        "github-actions"
+      ],
+      "companyOccurrences": [],
+      "sourceStatus": "verified",
+      "createdAt": "2026-07-14",
+      "updatedAt": "2026-07-14"
+    }
+  ]
+}
