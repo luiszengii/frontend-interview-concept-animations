@@ -182,4 +182,87 @@
       const audit=root.querySelector(".rb-audit");audit.className="rb-audit"+(step.blocked?" blocked":step.done?" on":"");audit.textContent=step.blocked?"403 · missing kb:delete · tenant_A/kb_12 · trace_8fd2":step.done?"200 · user_42 deleted tenant_A/kb_12 · audit saved":"等待权限决策…";
     }
   });
+
+  window.SCENES.push({
+    id:"ai-conversation-runtime",title:"AI 多轮对话：状态、长列表与滚动锚点",cat:"AI",css:"",
+    html:`<div class="scene-ai-conversation-runtime">
+      <div class="acr-metrics"><span>历史页 <b data-acr="pages">1</b></span><span>DOM 消息 <b data-acr="dom">6</b></span><span>当前状态 <b data-acr="status">snapshot</b></span></div>
+      <div class="acr-layout">
+        <aside class="acr-server"><b>History API</b><div class="acr-page old">cursor_80<br><small>更早 20 条</small></div><div class="acr-page current">cursor_100<br><small>最近 20 条</small></div><code data-acr="cursor">before=null</code></aside>
+        <section class="acr-phone"><div class="acr-head">conversation_c7 <span data-acr="follow">贴底跟随</span></div><div class="acr-scroll"><i class="acr-viewport top"></i><div class="acr-loader">↑ 加载更早记录</div><div class="acr-message older">assistant · m78</div><div class="acr-message older">user · m79</div><div class="acr-message anchor">assistant · m80 <em>滚动锚点</em></div><div class="acr-message">user · m98</div><div class="acr-message">assistant · m99</div><div class="acr-message user">user · local_101 <small>pending</small></div><div class="acr-message assistant"><span data-acr="text">等待生成…</span><div class="acr-card">退款条款 · 第 8 页</div></div><i class="acr-viewport bottom"></i></div><button class="acr-bottom">↓ 回到底部</button></section>
+        <aside class="acr-store"><b>Normalized Store</b><code>messagesById</code><code>partsById</code><code>order[]</code><div class="acr-ledger" data-acr="ledger">m98 → m99</div><div class="acr-controller">generation_g12<br>AbortController</div></aside>
+      </div>
+    </div>`,
+    steps:[
+      {phase:0,pages:1,dom:6,status:"snapshot",n:`首屏不是一串临时 JSX，而是稳定实体：<b>conversationId + messageId + ordered parts</b>。服务端最近一页是事实源，前端按 ID 归一化。`},
+      {phase:1,pages:1,dom:8,status:"optimistic",optimistic:true,n:`发送时先插入 local_101 和 pending assistant，界面立即响应；服务端随后用 clientMessageId 对账，不能把正式消息再 append 一遍。`},
+      {phase:2,pages:1,dom:8,status:"streaming",optimistic:true,stream:true,n:`流式事件按 messageId、partId、sequence 合并到同一条 assistant message。Token 只更新尾部 part，旧消息实体引用保持稳定。`},
+      {phase:3,pages:1,dom:8,status:"reading history",optimistic:true,stream:true,reading:true,n:`用户上滑阅读历史后取消自动贴底。新 Token 仍进入 store，但 UI 只显示“回到底部”，不能每次更新都抢走滚动位置。`},
+      {phase:4,pages:1,dom:8,status:"loading cursor",optimistic:true,reading:true,loading:true,n:`接近顶部触发 <b>before=cursor_100</b>，用 cursor 向上加载；offset 会因并发新增消息而漂移，不适合聊天历史。`},
+      {phase:5,pages:2,dom:8,status:"anchor compensated",optimistic:true,reading:true,prepend:true,n:`旧页 prepend 前记录 m80 的屏幕位置和 scrollHeight；插入后补偿高度差，让 m80 仍停在原处，不发生“加载后跳走”。`},
+      {phase:6,pages:5,dom:12,status:"virtual window",optimistic:true,reading:true,prepend:true,virtual:true,n:`历史继续增长时只渲染 viewport + overscan。数据层可以有几千条，DOM 常量维持约 12 条；离开窗口的是节点，不是消息数据。`},
+      {phase:7,pages:5,dom:12,status:"height corrected",optimistic:true,reading:true,prepend:true,virtual:true,card:true,n:`卡片异步展开改变行高：按 partId 更新高度缓存，并围绕当前锚点补偿 scrollTop。图片和卡片先预留尺寸，减少 CLS。`},
+      {phase:8,pages:5,dom:12,status:"stable",optimistic:true,stream:true,prepend:true,virtual:true,card:true,done:true,n:`高分闭环：<b>ID 化消息状态 → cursor 历史 → 虚拟窗口 → prepend/变高锚点补偿 → 仅贴底时自动跟随</b>。`}
+    ],
+    apply(root,index){
+      const s=this.steps[index];root.className="scene-ai-conversation-runtime"+(s.reading?" reading":"")+(s.loading?" loading":"")+(s.prepend?" prepended":"")+(s.virtual?" virtual":"")+(s.card?" card-open":"")+(s.done?" done":"");
+      root.querySelector('[data-acr="pages"]').textContent=s.pages;root.querySelector('[data-acr="dom"]').textContent=s.dom;root.querySelector('[data-acr="status"]').textContent=s.status;
+      root.querySelector('[data-acr="cursor"]').textContent=s.loading?"before=cursor_100":s.prepend?"next=cursor_80":"before=null";
+      root.querySelector('[data-acr="follow"]').textContent=s.reading?"已暂停跟随":"贴底跟随";
+      root.querySelector('[data-acr="text"]').textContent=s.stream?"退款条款支持 7 日内申请…":"等待生成…";
+      root.querySelector('[data-acr="ledger"]').textContent=s.optimistic?"local_101 → g12 / p_text":s.prepend?"m78 … m101":"m98 → m99";
+    }
+  });
+
+  window.SCENES.push({
+    id:"ai-structured-parts",title:"AI 结构化消息：事件协议到卡片渲染",cat:"AI",css:"",
+    html:`<div class="scene-ai-structured-parts">
+      <div class="asp-wire"><b>Response bytes</b><span class="asp-chunk">data:{type:"te</span><span class="asp-chunk">xt_delta"…}\n\n</span><span class="asp-magic">[[CARD:</span><span class="asp-magic">refund]]</span></div>
+      <div class="asp-machine"><section class="asp-parser"><b>增量帧解析器</b><div class="asp-buffer" data-asp="buffer">buffer: ∅</div><div class="asp-envelope"><span>type</span><span>messageId</span><span>partId</span><span>sequence</span><span>schemaVersion</span></div></section><i class="asp-packet" data-asp="packet">?</i><section class="asp-parts"><b>Message Parts</b><div class="asp-part text">p_text · text</div><div class="asp-part card">p_card · refund@v2 <i></i></div><div class="asp-part cite">p_cite · source</div><div class="asp-part unknown">unknown@v9 · fallback</div></section></div>
+      <div class="asp-render"><div class="asp-registry"><b>Renderer Registry</b><code>text → Markdown</code><code>refund@v2 → Card</code><code>* → SafeFallback</code></div><article class="asp-ui"><p data-asp="text">等待内容…</p><div class="asp-card"><b>退款申请</b><span data-asp="card">loading 0%</span></div><sup class="asp-cite">[1]</sup><div class="asp-fallback">暂不支持此内容 · trace 可复制</div></article></div>
+    </div>`,
+    steps:[
+      {phase:0,type:"bad delimiter",n:`反例：把 <b>[[CARD:refund]]</b> 混进模型正文。特殊符号可能被拆在两个 chunk、被用户正文撞到或转义失败，展示语义不能靠字符串猜。`},
+      {phase:1,type:"SSE frame",buffer:"保留半截行，等待 \\n\\n",n:`传输层先按 SSE 规范解析完整事件边界；网络 chunk 不是事件。半截 UTF-8、半行 data 和半个 JSON 都必须留在 buffer。`},
+      {phase:2,type:"text_delta",part:"text",text:true,n:`完整事件进入业务信封：type、messageId、partId、sequence、payload、schemaVersion。text_delta 只追加 p_text，不重建整条消息。`},
+      {phase:3,type:"card_start",part:"card",text:true,card:true,progress:0,n:`card_start 创建 p_card 的稳定骨架。UI 先显示 loading 卡，partId 是后续 patch 找回同一组件身份的钥匙。`},
+      {phase:4,type:"card_patch",part:"card",text:true,card:true,progress:65,n:`card_patch 携带同一个 p_card 和递增 sequence，前端 schema 校验后局部更新 65%；不是再 append 一张新卡。`},
+      {phase:5,type:"card_done",part:"card",text:true,card:true,progress:100,n:`card_done 收口为 success。持久化的是结构化 part；刷新后可按同一 renderer 重建，不需要重新解析模型文本。`},
+      {phase:6,type:"citation",part:"cite",text:true,card:true,progress:100,cite:true,n:`角标/引用是独立 source part，正文只持有引用 ID。前端把 [1] 与来源元数据关联，链接和权限可单独校验。`},
+      {phase:7,type:"unknown@v9",part:"unknown",text:true,unknown:true,n:`旧前端收到未知 type/version：进入 SafeFallback、保留 trace 并上报。不能崩掉整条消息，更不能把未知 payload 当 HTML 执行。`},
+      {phase:8,type:"message_done",part:"all",text:true,card:true,progress:100,cite:true,done:true,n:`最终模型：<b>字节边界 → 事件边界 → 类型信封 → parts 状态树 → renderer registry</b>。协议版本和安全降级让卡片可以长期演进。`}
+    ],
+    apply(root,index){
+      const s=this.steps[index];root.className="scene-ai-structured-parts"+(s.phase===0?" bad":"")+(s.done?" done":"");root.querySelector('[data-asp="packet"]').textContent=s.type;root.querySelector('[data-asp="buffer"]').textContent=s.buffer||"buffer: complete event";root.querySelector('[data-asp="text"]').textContent=s.text?"合同支持 7 日内退款":"等待内容…";
+      root.querySelectorAll(".asp-part").forEach(n=>n.classList.remove("on"));if(s.part){if(s.part==="all")root.querySelectorAll(".asp-part:not(.unknown)").forEach(n=>n.classList.add("on"));else root.querySelector(".asp-part."+s.part)?.classList.add("on");}
+      root.querySelector(".asp-card").classList.toggle("on",!!s.card);root.querySelector('[data-asp="card"]').textContent=s.progress===100?"success · 可申请":s.card?"loading "+s.progress+"%":"loading 0%";root.querySelector(".asp-cite").classList.toggle("on",!!s.cite);root.querySelector(".asp-fallback").classList.toggle("on",!!s.unknown);root.querySelector(".asp-card i").style.width=(s.progress||0)+"%";
+    }
+  });
+
+  window.SCENES.push({
+    id:"binary-stream-resume",title:"二进制文件流：卡顿检测、断点续传与校验",cat:"性能·网络",css:"",
+    html:`<div class="scene-binary-stream-resume">
+      <div class="bsr-head"><span>file_report.pdf</span><b data-bsr="offset">0 / 100 MB</b><span data-bsr="state">idle</span></div>
+      <div class="bsr-route"><section class="bsr-origin"><b>Origin</b><code>ETag "v7"</code><small data-bsr="range">Accept-Ranges: bytes</small></section><div class="bsr-rail"><div class="bsr-bytes">${Array.from({length:10},(_,i)=>`<i data-seg="${i}">${i*10}</i>`).join("")}</div><span class="bsr-cursor"></span><span class="bsr-stall">timeout</span></div><section class="bsr-sink"><b>Local sink</b><div class="bsr-disk">progressive write</div><small>不把 100MB 全留内存</small></section></div>
+      <div class="bsr-checkpoint"><div><b>checkpoint</b><code data-bsr="checkpoint">offset=0 · etag=v7</code></div><div class="bsr-request" data-bsr="request">GET /file</div><div class="bsr-verify" data-bsr="verify">等待校验</div></div>
+      <div class="bsr-branch">ETag 改为 "v8" → If-Range 不匹配 → 返回 200，旧分片作废</div>
+      <div class="bsr-unsupported">Accept-Ranges 缺失 → 前端无法凭 offset 续传 → 重新下载，或由后端改为分片任务 / 对象存储协议</div>
+    </div>`,
+    steps:[
+      {phase:0,count:0,offset:0,state:"idle",n:`开始前确认文件 ID、总长度、ETag 和 Accept-Ranges。断点不是“记住进度条百分比”，而是记住已确认写入的字节 offset 与资源版本。`},
+      {phase:0,count:0,offset:0,state:"resume unsupported",unsupported:true,request:"Accept-Ranges: none",n:`先走能力分支：如果服务端没有稳定资源标识，也不支持 Range，前端无法把任意二进制流变成可续传下载。此时只能重新下载，或推动后端提供分片任务 / 对象存储协议。`},
+      {phase:1,count:4,offset:40,state:"streaming",request:"200 stream · reader.read()",n:`ReadableStream 持续读 Uint8Array，并边读边写入目标。小文件可组 Blob；大文件若把所有 chunk 留在数组里，内存会接近文件大小。`},
+      {phase:2,count:4,offset:48,state:"stalled",stall:true,request:"8s 无新字节",n:`已收到 48MB 后连接不再前进。没有 error 不代表健康：用“最后一次字节到达时间”检测 stall，而不是无限显示 48%。`},
+      {phase:3,count:4,offset:48,state:"aborted",stall:true,request:"reader.cancel() + abort()",n:`超过阈值后取消 reader 和请求，只把已确认落盘的 48MB 写入 checkpoint；尚在内存、未确认的尾块不能计入 offset。`},
+      {phase:4,count:4,offset:48,state:"resuming",resume:true,request:"Range: bytes=48MB- · If-Range: \"v7\"",n:`重连携带 Range 和 If-Range。If-Range 用 ETag 保证续传的仍是同一版本，防止把 v7 前半段和 v8 后半段拼在一起。`},
+      {phase:5,count:7,offset:70,state:"206 Partial Content",resume:true,request:"206 · Content-Range: 48MB-99MB/100MB",n:`服务端返回 206 与匹配的 Content-Range，前端从 48MB 继续写；若返回起点不一致，立即停止，不能凭感觉拼接。`},
+      {phase:6,count:4,offset:48,state:"version mismatch",mismatch:true,request:"If-Range 失败 → 200 full body",n:`失败分支：资源 ETag 已变为 v8，服务端返回 200 全量。前端必须丢弃 v7 checkpoint 从头开始，而不是继续追加。`},
+      {phase:7,count:10,offset:100,state:"downloaded",resume:true,request:"206 completed",n:`正常分支继续到 100MB。结束事件只说明流关闭，还要核对累计字节与 Content-Range 总长度。`},
+      {phase:8,count:10,offset:100,state:"verified",resume:true,done:true,request:"size=100MB · sha256 ✓",n:`校验长度和 hash 后才原子标记完成。高分闭环：<b>stall 检测 → 取消 → offset+ETag checkpoint → Range/If-Range → 206 → 完整性校验</b>。`}
+    ],
+    apply(root,index){
+      const s=this.steps[index];root.className="scene-binary-stream-resume"+(s.stall?" stalled":"")+(s.resume?" resuming":"")+(s.mismatch?" mismatch":"")+(s.unsupported?" unsupported":"")+(s.done?" done":"");root.querySelector('[data-bsr="offset"]').textContent=s.offset+" / 100 MB";root.querySelector('[data-bsr="state"]').textContent=s.state;root.querySelector('[data-bsr="checkpoint"]').textContent="offset="+s.offset+"MB · etag=v7";root.querySelector('[data-bsr="request"]').textContent=s.request||"GET /file";root.querySelector('[data-bsr="verify"]').textContent=s.done?"size + sha256 ✓":s.offset===100?"校验中…":"等待校验";root.querySelector('[data-bsr="range"]').textContent=s.unsupported?"Accept-Ranges: none":"Accept-Ranges: bytes";
+      root.querySelectorAll("[data-seg]").forEach((n,i)=>{n.className=i<s.count?"filled":"";if(s.stall&&i===4)n.classList.add("broken")});root.querySelector(".bsr-cursor").style.left=Math.min(96,s.offset)+"%";
+    }
+  });
 })();

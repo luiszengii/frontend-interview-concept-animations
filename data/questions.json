@@ -30,6 +30,810 @@
       "updatedAt": "2026-07-14"
     },
     {
+      "id": "ai-multi-turn-state-model",
+      "title": "AI 多轮对话在前端如何建模、更新和渲染？",
+      "questionType": "scenario",
+      "track": "AI 前端",
+      "difficulty": "project",
+      "prompt": "用户消息、助手流式回复、工具调用和失败重试如何组成一条可持久化、可恢复的多轮会话？",
+      "answerOutline": [
+        "用 conversationId、messageId 和有序 parts 建模；消息 role 只表示参与方，文本、卡片、引用、工具状态都放在 parts 中。",
+        "发送时先插入本地 user message 与 pending assistant message，再用服务端返回的稳定 ID 对账，避免刷新后重复。",
+        "流式事件按 messageId、partId、sequence 合并；旧序号丢弃、重复序号幂等处理，done/error 明确收口状态。",
+        "历史记录以服务端为事实源，本地仅保存草稿、滚动位置和进行中的请求句柄。"
+      ],
+      "tags": ["AI Chat", "message state", "optimistic UI", "stream reconciliation"],
+      "animationSceneId": "ai-conversation-runtime",
+      "sources": ["ai-sdk-streaming-data", "ai-sdk-message-persistence", "ai-sdk-resume-streams", "whatwg-sse-stream"],
+      "relatedQuestionIds": ["ai-long-conversation-rendering", "ai-structured-message-protocol", "ai-stream-event-ordering", "ai-conversation-race-control"],
+      "companyOccurrences": [{"company":"字节跳动（OD）","count":1,"interviewIds":["interview-2026-07-14-bytedance-od"]}],
+      "sourceStatus": "verified",
+      "createdAt": "2026-07-14",
+      "updatedAt": "2026-07-14"
+    },
+    {
+      "id": "ai-long-conversation-rendering",
+      "title": "很长的 AI 对话如何分页加载并保持滚动稳定？",
+      "questionType": "scenario",
+      "track": "AI 前端",
+      "difficulty": "project",
+      "prompt": "几千条、消息高度不固定且最后一条持续增长时，如何控制 DOM 数量、加载更早历史并避免滚动跳动？",
+      "answerOutline": [
+        "历史消息用 cursor 向上分页，不用 offset；只在接近顶部时加载更早一页并去重合并。",
+        "用虚拟列表只渲染 viewport 与少量 overscan；对 Markdown、图片和卡片采用动态高度测量与缓存。",
+        "prepend 前记录锚点元素和容器 scrollHeight，插入后补偿高度差，让用户仍看到同一条消息。",
+        "仅当用户贴近底部时自动跟随流式消息；用户上滑阅读历史后显示“回到底部”，不强抢滚动。"
+      ],
+      "tags": ["virtual list", "cursor pagination", "scroll anchor", "dynamic height"],
+      "animationSceneId": "ai-conversation-runtime",
+      "sources": ["webdev-virtual-list", "mdn-scroll-anchoring"],
+      "relatedQuestionIds": ["ai-multi-turn-state-model", "ai-message-storage-reconciliation", "react-transition-chat-input"],
+      "companyOccurrences": [{"company":"字节跳动（OD）","count":1,"interviewIds":["interview-2026-07-14-bytedance-od"]}],
+      "sourceStatus": "verified",
+      "createdAt": "2026-07-14",
+      "updatedAt": "2026-07-14"
+    },
+    {
+      "id": "ai-structured-message-protocol",
+      "title": "AI 流里的角标、引用和卡片内容如何与后端约定？",
+      "questionType": "scenario",
+      "track": "AI 前端",
+      "difficulty": "project",
+      "prompt": "为什么不应该在模型文本里塞特殊分隔符？如何设计前后端一致、可增量更新的结构化消息协议？",
+      "answerOutline": [
+        "传输层使用有边界的 SSE 事件或长度前缀帧；业务层使用 type、messageId、partId、sequence、payload、schemaVersion 的事件信封。",
+        "text_delta 追加文本；card_start/card_patch/card_done 按稳定 partId 更新同一个卡片；citation、file、tool_status 是独立 part。",
+        "前端先做 schema 校验，再把 part 交给 renderer registry；未知 type/version 显示安全降级卡并记录遥测。",
+        "不要靠自定义符号切字符串：符号可能跨 chunk、出现在正文或转义失败，协议边界和展示语义必须分离。"
+      ],
+      "tags": ["SSE protocol", "message parts", "card renderer", "schema version"],
+      "animationSceneId": "ai-structured-parts",
+      "sources": ["ai-sdk-streaming-data", "whatwg-sse-stream"],
+      "relatedQuestionIds": ["ai-card-versioning-fallback", "ai-markdown-stream-security", "ai-stream-event-ordering"],
+      "companyOccurrences": [{"company":"字节跳动（OD）","count":1,"interviewIds":["interview-2026-07-14-bytedance-od"]}],
+      "sourceStatus": "verified",
+      "createdAt": "2026-07-14",
+      "updatedAt": "2026-07-14"
+    },
+    {
+      "id": "binary-stream-resume",
+      "title": "二进制文件流传到一半卡住或断开，前端如何恢复？",
+      "questionType": "scenario",
+      "track": "性能·网络",
+      "difficulty": "project",
+      "prompt": "后端以二进制流返回大文件，前端收到一部分后超时、断网或页面切换，怎样避免从头下载并确保文件完整？",
+      "answerOutline": [
+        "先确认服务端是否提供稳定文件版本和 Accept-Ranges；若不支持，前端无法凭 offset 续传，只能重新下载或推动后端提供分片任务/对象存储协议。",
+        "支持续传时，读取 ReadableStream 并累计已确认落盘的字节 offset，把进度、文件 ID、ETag/版本和校验信息持久化为 checkpoint。",
+        "无进度超过阈值时 abort 当前 reader；重连发送 Range: bytes=offset- 与 If-Range: ETag，服务端应返回 206 和正确 Content-Range。",
+        "若 ETag 变化或服务端返回 200，说明资源版本不一致，丢弃旧分片从头开始；416 则重新核对总长度。",
+        "小文件可组 Blob；大文件要边读边写到 OPFS/File System Access 等可用的持久化目标。仅存页面内存无法跨刷新恢复，结束后还要校验总长度和 hash。"
+      ],
+      "tags": ["binary stream", "Range", "206", "ETag", "resume"],
+      "animationSceneId": "binary-stream-resume",
+      "sources": ["mdn-http-range", "mdn-readable-stream-reader", "mdn-abort-controller", "mdn-file-system-writable"],
+      "relatedQuestionIds": ["ai-stream-abort", "axios-request-cancel-race", "axios-retry-idempotency"],
+      "companyOccurrences": [{"company":"字节跳动（OD）","count":1,"interviewIds":["interview-2026-07-14-bytedance-od"]}],
+      "sourceStatus": "verified",
+      "createdAt": "2026-07-14",
+      "updatedAt": "2026-07-14"
+    },
+    {
+      "id": "react-hooks-selection",
+      "title": "项目里用过哪些 React Hooks，分别解决什么问题？",
+      "questionType": "concept",
+      "track": "React",
+      "difficulty": "core",
+      "prompt": "不要只报 Hook 名称，请按状态、外部同步、引用、性能和并发更新说明选择依据。",
+      "answerOutline": [
+        "useState 管局部简单状态，状态转移复杂或多个事件共享规则时用 useReducer。",
+        "useEffect 只用于同步网络、订阅、DOM 等外部系统；useRef 保存不参与渲染的句柄和最新值。",
+        "useMemo 缓存昂贵计算，useCallback 缓存函数引用；二者是性能工具，不负责阻止函数被调用。",
+        "useTransition/useDeferredValue 把非紧急更新降优先级；自定义 Hook 用来复用有状态逻辑，而不是共享状态实例。"
+      ],
+      "tags": ["Hooks", "useState", "useReducer", "useEffect", "useRef"],
+      "sources": ["react-built-in-hooks"],
+      "relatedQuestionIds": ["react-state-ref-reducer", "react-effect-lifecycle", "react-memo-callback-identity"],
+      "companyOccurrences": [{"company":"字节跳动（OD）","count":1,"interviewIds":["interview-2026-07-14-bytedance-od"]}],
+      "sourceStatus": "verified",
+      "createdAt": "2026-07-14",
+      "updatedAt": "2026-07-14"
+    },
+    {
+      "id": "ahooks-vs-react-hooks",
+      "title": "ahooks 和 React 内置 Hooks 有什么区别？",
+      "questionType": "concept",
+      "track": "React",
+      "difficulty": "core",
+      "prompt": "如果面试官说 A Hooks，按 ahooks 理解时，它与 React Hooks 机制、使用边界和选型有什么区别？",
+      "answerOutline": [
+        "React Hooks 是 React 提供的状态与生命周期原语，并受顶层调用规则约束。",
+        "ahooks 是第三方 Hook 工具库，基于 React Hooks 封装 useRequest、轮询、防抖、缓存等常见业务模式，不是另一套运行时。",
+        "选择 ahooks 要评估包体积、版本兼容、团队约定和是否真能减少重复边界代码；关键链路仍要理解底层取消、竞态和错误处理。"
+      ],
+      "tags": ["ahooks", "React Hooks", "useRequest"],
+      "sources": ["react-built-in-hooks", "ahooks-quick-start"],
+      "relatedQuestionIds": ["react-hooks-selection", "axios-request-cancel-race"],
+      "companyOccurrences": [{"company":"字节跳动（OD）","count":1,"interviewIds":["interview-2026-07-14-bytedance-od"]}],
+      "sourceStatus": "verified",
+      "createdAt": "2026-07-14",
+      "updatedAt": "2026-07-14"
+    },
+    {
+      "id": "react-effect-usecallback-count",
+      "title": "state 变化后，useEffect 里的 useCallback 会执行几次？",
+      "questionType": "scenario",
+      "track": "React",
+      "difficulty": "core",
+      "prompt": "state 是 useCallback 和 useEffect 的依赖，effect 内调用 callback；state 更新一次后究竟发生什么，为什么不能脱离代码直接回答次数？",
+      "answerOutline": [
+        "useCallback 不会自动执行函数；依赖变化时，它在本次 render 返回一个新的函数引用。",
+        "若一次 state 更新只产生一次已提交渲染，effect 依赖该 callback 并在内部调用一次，则 cleanup 先运行、setup 再运行，callback 通常被调用一次。",
+        "effect 同时依赖 state 和 callback 也只是一轮 effect，不会因为两个依赖都变而执行两次。",
+        "若 callback/effect 再 setState 会产生下一轮；开发 StrictMode 会额外检查初次挂载的 setup/cleanup，因此必须先确认代码、挂载还是更新、开发还是生产。"
+      ],
+      "tags": ["useEffect", "useCallback", "dependencies", "StrictMode"],
+      "sources": ["react-use-callback", "react-use-effect", "react-strict-mode"],
+      "relatedQuestionIds": ["react-effect-lifecycle", "react-effect-stale-closure", "react-memo-callback-identity"],
+      "companyOccurrences": [{"company":"字节跳动（OD）","count":1,"interviewIds":["interview-2026-07-14-bytedance-od"]}],
+      "sourceStatus": "verified",
+      "createdAt": "2026-07-14",
+      "updatedAt": "2026-07-14"
+    },
+    {
+      "id": "ai-stream-event-ordering",
+      "title": "AI 流式事件乱序、重复或重连后如何幂等合并？",
+      "questionType": "scenario",
+      "track": "AI 前端",
+      "difficulty": "project",
+      "prompt": "网络重试、代理缓冲或恢复连接时，同一消息可能收到重复或缺失事件，前端如何保证最终 UI 一致？",
+      "answerOutline": [
+        "每个生成任务使用 streamId，每个 part 使用稳定 partId，事件带单调 sequence 或可恢复 event id。",
+        "客户端记录每个 part 的 lastSequence；重复事件幂等丢弃，发现缺口先标记不完整并请求补段或整条快照。",
+        "重连携带 Last-Event-ID/lastSequence，服务端从可重放日志续发；无法续发时返回权威快照进行 reconciliation。",
+        "done 是终态事件，未收到 done 的连接关闭只能标记 interrupted，不能冒充成功。"
+      ],
+      "tags": ["SSE", "sequence", "idempotency", "reconnect"],
+      "sources": ["whatwg-sse-stream", "ai-sdk-streaming-data"],
+      "relatedQuestionIds": ["ai-multi-turn-state-model", "ai-structured-message-protocol", "ai-conversation-race-control"],
+      "companyOccurrences": [],
+      "sourceStatus": "verified",
+      "createdAt": "2026-07-14",
+      "updatedAt": "2026-07-14"
+    },
+    {
+      "id": "ai-card-versioning-fallback",
+      "title": "AI 卡片协议升级时如何兼容旧前端和未知类型？",
+      "questionType": "scenario",
+      "track": "AI 前端",
+      "difficulty": "project",
+      "prompt": "后端新增卡片字段或新 type，旧版本前端不能崩溃，协议和渲染层怎样演进？",
+      "answerOutline": [
+        "事件信封与各 card payload 分别带 schemaVersion，新增字段优先保持向后兼容，破坏性变化使用新 type/version。",
+        "renderer registry 按 type+version 选择组件，进入组件前做运行时 schema 校验和默认值填充。",
+        "未知类型展示通用占位卡、保留原始 traceId 并上报，而不是把 payload 当 HTML 渲染或直接丢失整条消息。",
+        "前后端通过契约测试与灰度 Feature Flag 验证新版本，确认客户端覆盖率后再移除旧解析器。"
+      ],
+      "tags": ["schema version", "renderer registry", "fallback", "contract test"],
+      "sources": ["ai-sdk-streaming-data", "vercel-feature-flags"],
+      "relatedQuestionIds": ["ai-structured-message-protocol", "openapi-breaking-change"],
+      "companyOccurrences": [],
+      "sourceStatus": "verified",
+      "createdAt": "2026-07-14",
+      "updatedAt": "2026-07-14"
+    },
+    {
+      "id": "ai-markdown-stream-security",
+      "title": "流式 Markdown 未闭合、代码块和 XSS 如何处理？",
+      "questionType": "scenario",
+      "track": "AI 前端",
+      "difficulty": "project",
+      "prompt": "模型逐段返回 Markdown，标签和代码围栏可能只到一半，如何避免闪烁、重复解析和恶意 HTML？",
+      "answerOutline": [
+        "网络 chunk 先增量解码并合并到文本 buffer，解析边界不等于 chunk 边界。",
+        "流式阶段保留稳定前缀，只对尾部未闭合 block 增量更新；结束后做一次完整解析校正。",
+        "默认禁用原始 HTML；必须支持时使用维护中的 sanitizer、URL allowlist 和安全链接属性，绝不直接 dangerouslySetInnerHTML 未清洗结果。",
+        "按动画帧或时间片批量提交，避免每个 token 触发整篇 Markdown 重解析。"
+      ],
+      "tags": ["Markdown", "XSS", "sanitization", "incremental rendering"],
+      "sources": ["owasp-xss-prevention", "mdn-request-animation-frame"],
+      "relatedQuestionIds": ["ai-structured-message-protocol", "ai-stream-abort"],
+      "companyOccurrences": [],
+      "sourceStatus": "verified",
+      "createdAt": "2026-07-14",
+      "updatedAt": "2026-07-14"
+    },
+    {
+      "id": "ai-conversation-race-control",
+      "title": "切换会话、重新生成和并发请求时如何避免串流？",
+      "questionType": "scenario",
+      "track": "AI 前端",
+      "difficulty": "project",
+      "prompt": "用户在 A 会话生成中切到 B，或连续点击重新生成，旧请求晚到的数据为什么会污染 UI，怎样防止？",
+      "answerOutline": [
+        "每个请求绑定 conversationId、generationId 和 AbortController；切换或重生成时先让旧 generation 进入 cancelled。",
+        "事件写入前检查当前会话和 generationId，晚到包即使无法物理取消也不能进入新消息。",
+        "发送按钮做 single-flight 或显式允许分支生成；服务端使用幂等 requestId 防止重试创建两条回复。",
+        "取消是协作式的：前端停止读取，服务端监听断连并停止模型与工具任务。"
+      ],
+      "tags": ["race condition", "AbortController", "generationId", "idempotency"],
+      "sources": ["mdn-abort-controller", "whatwg-sse-stream"],
+      "relatedQuestionIds": ["ai-multi-turn-state-model", "axios-request-cancel-race", "ai-stream-abort"],
+      "companyOccurrences": [],
+      "sourceStatus": "verified",
+      "createdAt": "2026-07-14",
+      "updatedAt": "2026-07-14"
+    },
+    {
+      "id": "ai-message-storage-reconciliation",
+      "title": "乐观消息、服务端持久化和刷新恢复如何对账？",
+      "questionType": "scenario",
+      "track": "AI 前端",
+      "difficulty": "project",
+      "prompt": "前端先显示临时消息，服务端稍后返回正式 ID；刷新、重试或离线恢复时如何避免重复与丢失？",
+      "answerOutline": [
+        "客户端生成 clientMessageId 立即渲染 pending，服务端持久化时以该 ID 做幂等键并返回 serverMessageId。",
+        "本地状态保存 client/server ID 映射与发送状态；成功后替换而不是追加，失败保留原内容供重试。",
+        "刷新后从服务端按 cursor 拉取权威消息，再把未确认 outbox 按幂等键重放和对账。",
+        "编辑、重新生成和分支对话使用 parentMessageId/version，避免只靠数组下标表达历史。"
+      ],
+      "tags": ["optimistic UI", "outbox", "idempotency", "reconciliation"],
+      "sources": ["ai-sdk-streaming-data", "ai-sdk-message-persistence", "ai-sdk-resume-streams"],
+      "relatedQuestionIds": ["ai-multi-turn-state-model", "ai-long-conversation-rendering"],
+      "companyOccurrences": [],
+      "sourceStatus": "verified",
+      "createdAt": "2026-07-14",
+      "updatedAt": "2026-07-14"
+    },
+    {
+      "id": "react-state-ref-reducer",
+      "title": "useState、useRef、useReducer 在对话页面里怎么选？",
+      "questionType": "scenario",
+      "track": "React",
+      "difficulty": "project",
+      "prompt": "输入框、消息状态机、AbortController、滚动位置和重试次数分别该放在哪里？",
+      "answerOutline": [
+        "影响 UI 的简单值放 useState；多事件驱动且状态转换需要约束的消息生命周期放 useReducer。",
+        "AbortController、reader、计时器和最新 generationId 放 useRef，因为更新它们不应触发渲染。",
+        "跨组件共享且高频更新的消息状态优先拆 store/selector，不要把整棵消息数组塞进一个 Context。",
+        "判断标准不是数据类型，而是它是否参与渲染、更新规则是否复杂、是否需要跨组件订阅。"
+      ],
+      "tags": ["useState", "useRef", "useReducer", "state machine"],
+      "sources": ["react-built-in-hooks"],
+      "relatedQuestionIds": ["react-hooks-selection", "ai-multi-turn-state-model"],
+      "companyOccurrences": [],
+      "sourceStatus": "verified",
+      "createdAt": "2026-07-14",
+      "updatedAt": "2026-07-14"
+    },
+    {
+      "id": "react-effect-lifecycle",
+      "title": "useEffect 的 setup、cleanup 和依赖变化顺序是什么？",
+      "questionType": "concept",
+      "track": "React",
+      "difficulty": "core",
+      "prompt": "组件挂载、依赖变化、卸载和开发 StrictMode 下，effect 分别按什么顺序运行？",
+      "answerOutline": [
+        "提交 DOM 后运行 setup；依赖变化的下一次提交后，先用旧值运行 cleanup，再用新值运行 setup。",
+        "卸载时运行最后一次 cleanup，释放订阅、连接、timer 和 reader。",
+        "开发 StrictMode 会在初次挂载额外执行一次 setup→cleanup→setup 压力测试；生产不做这次额外检查。",
+        "若没有外部系统要同步，通常不该用 effect 组织纯数据流。"
+      ],
+      "tags": ["useEffect", "cleanup", "StrictMode", "lifecycle"],
+      "animationSceneId": "react-effect",
+      "sources": ["react-use-effect", "react-strict-mode"],
+      "relatedQuestionIds": ["react-effect-usecallback-count", "react-effect-stale-closure"],
+      "companyOccurrences": [],
+      "sourceStatus": "verified",
+      "createdAt": "2026-07-14",
+      "updatedAt": "2026-07-14"
+    },
+    {
+      "id": "react-effect-stale-closure",
+      "title": "流式回调里的 stale closure 怎么产生，怎么修？",
+      "questionType": "scenario",
+      "track": "React",
+      "difficulty": "project",
+      "prompt": "SSE onmessage 一直读到旧 conversationId 或旧 messages，为什么，怎样在不重连每个 render 的情况下拿到最新状态？",
+      "answerOutline": [
+        "回调闭包捕获创建它那次 render 的值；漏依赖会读旧值，把对象/函数依赖写不稳又会导致反复重连。",
+        "优先用函数式 state update，让更新基于队列中的最新状态，而不是闭包里的旧数组。",
+        "只需读取而不触发订阅重建的最新值可同步到 ref；响应式逻辑则声明完整依赖并实现 cleanup。",
+        "不要用禁用 lint 掩盖依赖问题；应拆分 effect、把函数移入 effect 或稳定真正需要的依赖。"
+      ],
+      "tags": ["stale closure", "useEffect", "functional update", "useRef"],
+      "sources": ["react-use-effect", "react-use-callback"],
+      "relatedQuestionIds": ["react-effect-lifecycle", "ai-conversation-race-control"],
+      "companyOccurrences": [],
+      "sourceStatus": "verified",
+      "createdAt": "2026-07-14",
+      "updatedAt": "2026-07-14"
+    },
+    {
+      "id": "react-memo-callback-identity",
+      "title": "React.memo、useMemo、useCallback 如何协作，何时反而没用？",
+      "questionType": "scenario",
+      "track": "React",
+      "difficulty": "core",
+      "prompt": "父组件每个 token 都更新时，怎样让无关消息卡片不重渲染，为什么只包 useCallback 不一定有效？",
+      "answerOutline": [
+        "memo 在组件边界浅比较 props；useCallback 只稳定函数引用，useMemo 只缓存计算结果或对象引用。",
+        "只有子组件被 memo、其他 props 也稳定且跳过渲染有实际收益时，稳定 callback 才有意义。",
+        "把持续变化的整条 messages 数组传给所有子项会击穿 memo，应按 messageId 订阅或保持未变化实体引用。",
+        "先用 Profiler 找瓶颈；缓存也有依赖比较和认知成本，不要默认全量包裹。"
+      ],
+      "tags": ["React.memo", "useMemo", "useCallback", "referential equality"],
+      "animationSceneId": "react-memo",
+      "sources": ["react-use-callback", "react-built-in-hooks"],
+      "relatedQuestionIds": ["react-effect-usecallback-count", "react-context-render-boundary"],
+      "companyOccurrences": [],
+      "sourceStatus": "verified",
+      "createdAt": "2026-07-14",
+      "updatedAt": "2026-07-14"
+    },
+    {
+      "id": "react-context-render-boundary",
+      "title": "对话状态放 Context 后为什么所有消息都重渲染？",
+      "questionType": "scenario",
+      "track": "React",
+      "difficulty": "project",
+      "prompt": "流式 token 每次更新 Context value，怎样缩小订阅范围并保持消息实体稳定？",
+      "answerOutline": [
+        "useContext 会订阅整个 value；Provider 每次创建新对象会通知所有消费者。",
+        "拆分低频会话元数据和高频消息流，稳定 Provider value，并让消息项按 ID 从支持 selector 的 store 订阅。",
+        "reducer 更新时只替换发生变化的 message/part，保留其他实体引用，才能让 memo/selector 命中。",
+        "外部 store 需提供一致快照与订阅语义，可通过 useSyncExternalStore 接入 React。"
+      ],
+      "tags": ["Context", "selector", "useSyncExternalStore", "render boundary"],
+      "sources": ["react-built-in-hooks"],
+      "relatedQuestionIds": ["react-memo-callback-identity", "ai-multi-turn-state-model"],
+      "companyOccurrences": [],
+      "sourceStatus": "verified",
+      "createdAt": "2026-07-14",
+      "updatedAt": "2026-07-14"
+    },
+    {
+      "id": "react-transition-chat-input",
+      "title": "流式消息更新很频繁，useTransition 能解决什么、不能解决什么？",
+      "questionType": "scenario",
+      "track": "React",
+      "difficulty": "project",
+      "prompt": "如何保证输入框优先响应，同时让 Markdown 和长消息列表的非紧急更新可被打断？",
+      "answerOutline": [
+        "输入值更新保持紧急同步；派生的搜索、复杂 Markdown 或非关键列表更新可放 transition。",
+        "transition 只调整 React 更新优先级，不会减少网络事件数量，也不会替代帧级 buffer 合并和虚拟列表。",
+        "受控输入本身不能只靠 transition 更新，否则会产生输入滞后；应分离即时值和延迟派生值。",
+        "用 pending 状态显示轻量反馈，并测量输入延迟和 commit 时间验证收益。"
+      ],
+      "tags": ["useTransition", "priority", "streaming UI", "input latency"],
+      "sources": ["react-use-transition", "react-built-in-hooks"],
+      "relatedQuestionIds": ["ai-long-conversation-rendering", "react-memo-callback-identity"],
+      "companyOccurrences": [],
+      "sourceStatus": "verified",
+      "createdAt": "2026-07-14",
+      "updatedAt": "2026-07-14"
+    },
+    {
+      "id": "tenant-config-bootstrap",
+      "title": "多租户运行时配置首屏加载失败时如何降级？",
+      "questionType": "scenario",
+      "track": "工程化",
+      "difficulty": "project",
+      "prompt": "单镜像启动必须先拿 Logo、主题和 Feature Flag，配置接口超时或缓存过期时怎么保证可用性？",
+      "answerOutline": [
+        "按 hostname/tenantId 解析租户，在 SSR 或 HTML bootstrap 阶段注入签名后的最小配置，减少首屏二次请求。",
+        "客户端缓存配置时带 tenantId、version、TTL；缓存只能作为短期兜底，不能跨租户复用。",
+        "超时使用安全默认主题并关闭高风险功能，后台重试成功后原子切换；未知租户直接拒绝而不是落到任意默认客户。",
+        "监控配置命中率、启动耗时和降级次数，支持按版本回滚。"
+      ],
+      "tags": ["multi-tenant", "bootstrap", "fallback", "config cache"],
+      "sources": ["next-multi-tenant", "vercel-feature-flags"],
+      "relatedQuestionIds": ["tenant-single-image", "tenant-hydration-theme", "tenant-isolation"],
+      "companyOccurrences": [],
+      "sourceStatus": "verified",
+      "createdAt": "2026-07-14",
+      "updatedAt": "2026-07-14"
+    },
+    {
+      "id": "tenant-hydration-theme",
+      "title": "运行时主题如何避免白屏闪烁和 Hydration mismatch？",
+      "questionType": "scenario",
+      "track": "工程化",
+      "difficulty": "project",
+      "prompt": "SSR 输出默认主题，客户端拿到租户配置后再换色会发生什么，怎样让服务端和客户端首帧一致？",
+      "answerOutline": [
+        "服务端按请求租户解析相同配置，把 CSS variables 和配置版本直接写入首屏 HTML。",
+        "客户端 hydration 前读取同一 bootstrap 数据，不在首次 render 用 localStorage 或随机值决定不同 DOM。",
+        "Logo/字体等资产提前确定尺寸和预加载策略，主题变化只改变量，避免额外 CLS。",
+        "配置版本不一致时记录遥测并选择重新导航或延迟非关键切换，而不是静默产生 mismatch。"
+      ],
+      "tags": ["hydration", "CSS variables", "FOUC", "theme"],
+      "sources": ["react-hydrate-root", "mdn-css-custom-properties", "next-multi-tenant"],
+      "relatedQuestionIds": ["tenant-config-bootstrap", "next-hydration-mismatch", "cls-diagnosis"],
+      "companyOccurrences": [],
+      "sourceStatus": "verified",
+      "createdAt": "2026-07-14",
+      "updatedAt": "2026-07-14"
+    },
+    {
+      "id": "tenant-isolation",
+      "title": "多租户前端如何避免配置、缓存和权限串租户？",
+      "questionType": "scenario",
+      "track": "工程化",
+      "difficulty": "project",
+      "prompt": "只在 UI 上切 tenantId 为什么不安全？请求、缓存、日志和后端授权要怎样共同隔离？",
+      "answerOutline": [
+        "tenantId 必须来自受信任域名/令牌上下文并由后端校验，不能只相信前端参数。",
+        "请求缓存 key、SWR/query key、IndexedDB 和广播消息都包含 tenantId；切租户时清理进行中请求和敏感本地状态。",
+        "后端每个资源查询都绑定 tenant scope 和主体权限，前端隐藏按钮不是授权边界。",
+        "日志与 trace 带 tenantId 但脱敏，针对跨租户 ID 猜测和缓存污染编写自动化测试。"
+      ],
+      "tags": ["tenant isolation", "cache key", "authorization", "BOLA"],
+      "sources": ["owasp-authorization", "next-multi-tenant"],
+      "relatedQuestionIds": ["tenant-config-bootstrap", "rbac-resource-permission"],
+      "companyOccurrences": [],
+      "sourceStatus": "verified",
+      "createdAt": "2026-07-14",
+      "updatedAt": "2026-07-14"
+    },
+    {
+      "id": "feature-flag-safe-release",
+      "title": "多租户 Feature Flag 如何灰度、回滚并避免权限泄漏？",
+      "questionType": "scenario",
+      "track": "工程化",
+      "difficulty": "project",
+      "prompt": "按租户开启新 Skill 或页面时，如何区分发布控制和真正授权？",
+      "answerOutline": [
+        "Flag 控制曝光和发布节奏，不替代后端权限；即使 UI 关闭，接口仍必须拒绝未授权调用。",
+        "评估上下文包含 tenant、环境、用户分群和稳定 hash，避免刷新时随机抖动。",
+        "配置有默认值、版本、审计和 kill switch；客户端拿不到配置时采用安全关闭。",
+        "灰度监控错误率、延迟和业务指标，异常自动或人工回滚，不需要重新构建镜像。"
+      ],
+      "tags": ["Feature Flag", "rollout", "kill switch", "multi-tenant"],
+      "sources": ["vercel-feature-flags", "owasp-authorization"],
+      "relatedQuestionIds": ["tenant-single-image", "tenant-config-bootstrap", "cicd-safe-deploy"],
+      "companyOccurrences": [],
+      "sourceStatus": "verified",
+      "createdAt": "2026-07-14",
+      "updatedAt": "2026-07-14"
+    },
+    {
+      "id": "next-server-client-boundary",
+      "title": "Next.js Server/Client Component 边界在 AI 对话页怎么划？",
+      "questionType": "scenario",
+      "track": "工程化",
+      "difficulty": "project",
+      "prompt": "会话首屏、消息交互、浏览器 API 和敏感数据分别放在哪里，怎样控制客户端 bundle？",
+      "answerOutline": [
+        "页面壳、会话元数据和可在服务端获取的首屏历史放 Server Component，减少客户端 JS 和数据瀑布。",
+        "输入框、滚动容器、AbortController、流式 reader 等需要状态或浏览器 API 的最小子树标记为 Client Component。",
+        "跨边界 props 必须可序列化，密钥和数据库客户端只留服务端；不要因为一个按钮把整页都变成 client。",
+        "用 Suspense 分段流式输出服务端内容，客户端接管交互不等于重新请求全部历史。"
+      ],
+      "tags": ["Next.js", "Server Components", "Client Components", "bundle"],
+      "sources": ["next-server-client-components"],
+      "relatedQuestionIds": ["next-ssr-middleware", "next-hydration-mismatch", "ai-multi-turn-state-model"],
+      "companyOccurrences": [],
+      "sourceStatus": "verified",
+      "createdAt": "2026-07-14",
+      "updatedAt": "2026-07-14"
+    },
+    {
+      "id": "next-cache-revalidation",
+      "title": "Next.js 会话列表和租户配置分别该怎么缓存与失效？",
+      "questionType": "scenario",
+      "track": "工程化",
+      "difficulty": "project",
+      "prompt": "哪些数据能共享缓存，哪些必须按用户动态读取；创建新会话后如何只刷新相关页面？",
+      "answerOutline": [
+        "公共品牌配置可按 tenant/version 缓存；用户会话和权限数据带身份上下文，通常动态读取并防止共享缓存泄漏。",
+        "为可缓存数据设计 tenant-scoped tag，更新后按 tag 或具体 path 失效，而不是全站清缓存。",
+        "Server Action/Route Handler 完成写入后再 revalidate；客户端乐观更新失败时回滚并以服务端结果对账。",
+        "区分 Data Cache、Full Route Cache 和客户端 Router Cache，回答时说明失效影响范围。"
+      ],
+      "tags": ["Next.js cache", "revalidatePath", "cache tag", "tenant"],
+      "sources": ["next-revalidate-path", "next-multi-tenant"],
+      "relatedQuestionIds": ["tenant-config-bootstrap", "next-server-client-boundary"],
+      "companyOccurrences": [],
+      "sourceStatus": "verified",
+      "createdAt": "2026-07-14",
+      "updatedAt": "2026-07-14"
+    },
+    {
+      "id": "next-hydration-mismatch",
+      "title": "AI/多租户页面 Hydration mismatch 常见来源和排查顺序是什么？",
+      "questionType": "scenario",
+      "track": "工程化",
+      "difficulty": "project",
+      "prompt": "服务端 HTML 与客户端首次 render 不一致时，怎样定位时间、随机数、浏览器状态和流式数据带来的差异？",
+      "answerOutline": [
+        "先比较服务端 HTML 和客户端首次 render 输入，定位 Date/Math.random、window/localStorage、不同租户配置和无效 HTML 嵌套。",
+        "首帧必须使用相同 props/bootstrap 快照；浏览器专属值放 effect 后更新或隔离为 client-only 区域。",
+        "流式消息不要在 hydration 前偷偷追加到 SSR 列表，先以服务端 snapshot 对齐再消费增量事件。",
+        "suppressHydrationWarning 只用于明确不可避免的单点文本，不是修复数据不一致的通用方案。"
+      ],
+      "tags": ["hydration mismatch", "SSR", "bootstrap", "debugging"],
+      "sources": ["react-hydrate-root", "next-server-client-components"],
+      "relatedQuestionIds": ["tenant-hydration-theme", "next-server-client-boundary"],
+      "companyOccurrences": [],
+      "sourceStatus": "verified",
+      "createdAt": "2026-07-14",
+      "updatedAt": "2026-07-14"
+    },
+    {
+      "id": "next-proxy-auth-boundary",
+      "title": "Next.js Proxy 能做鉴权到什么程度，为什么不能替代接口授权？",
+      "questionType": "scenario",
+      "track": "工程化",
+      "difficulty": "project",
+      "prompt": "Proxy（原 Middleware）拦截路由后已经跳转 403，后端为什么还要检查资源权限？",
+      "answerOutline": [
+        "Proxy 适合基于 cookie/tenant 做快速重定向、路由保护和请求改写，不应承担所有数据库级授权。",
+        "用户可绕过页面直接调用 API；每个服务端操作仍需校验身份、tenant scope、action 和 resource ownership。",
+        "Proxy 传递的身份上下文必须可验证，不能信任客户端可伪造 header。",
+        "把粗粒度导航体验和细粒度资源授权分开，日志用同一 trace 关联两层决策。"
+      ],
+      "tags": ["Next.js Proxy", "authorization", "RBAC", "resource"],
+      "sources": ["next-middleware", "owasp-authorization"],
+      "relatedQuestionIds": ["next-ssr-middleware", "rbac-defense-depth", "rbac-resource-permission"],
+      "companyOccurrences": [],
+      "sourceStatus": "verified",
+      "createdAt": "2026-07-14",
+      "updatedAt": "2026-07-14"
+    },
+    {
+      "id": "axios-refresh-single-flight",
+      "title": "多个请求同时 401，Axios 刷新 Token 如何只发一次？",
+      "questionType": "scenario",
+      "track": "工程化",
+      "difficulty": "project",
+      "prompt": "十个并发接口同时发现 access token 过期，怎样避免十次 refresh、重放风暴和无限循环？",
+      "answerOutline": [
+        "维护唯一 refreshPromise；第一个 401 创建刷新任务，后续 401 等待同一个 Promise。",
+        "刷新成功后用新 token 重放各自原请求；请求配置带 _retry 防止刷新接口或重放请求再次无限进入拦截器。",
+        "刷新失败时原子清理凭证、拒绝全部排队请求并触发一次登录跳转。",
+        "只对可安全重放的请求自动重试；流式请求和已消费 body 的请求走独立恢复策略。"
+      ],
+      "tags": ["Axios", "401", "single flight", "token refresh"],
+      "sources": ["axios-interceptors"],
+      "relatedQuestionIds": ["axios-stream-pipeline", "axios-retry-idempotency", "request-observability-contract"],
+      "companyOccurrences": [],
+      "sourceStatus": "verified",
+      "createdAt": "2026-07-14",
+      "updatedAt": "2026-07-14"
+    },
+    {
+      "id": "axios-retry-idempotency",
+      "title": "请求失败重试时，哪些接口可以重试，怎样避免重复写入？",
+      "questionType": "scenario",
+      "track": "工程化",
+      "difficulty": "project",
+      "prompt": "网络超时不代表后端没执行，POST 创建订单或发送消息如何做指数退避又不产生两份数据？",
+      "answerOutline": [
+        "GET 等幂等操作可按错误类型和 Retry-After 做有限指数退避加 jitter；4xx 业务错误通常不重试。",
+        "写操作必须携带服务端认可的 idempotency key/requestId，服务端缓存第一次结果并返回同一响应。",
+        "连接在响应前断开属于未知结果，先按幂等键查询状态，不能盲目重新提交。",
+        "限制最大次数和总耗时，暴露 retryCount、traceId 与最终失败原因。"
+      ],
+      "tags": ["retry", "idempotency", "backoff", "requestId"],
+      "sources": ["axios-interceptors", "mdn-idempotent"],
+      "relatedQuestionIds": ["axios-refresh-single-flight", "binary-stream-resume", "ai-message-storage-reconciliation"],
+      "companyOccurrences": [],
+      "sourceStatus": "verified",
+      "createdAt": "2026-07-14",
+      "updatedAt": "2026-07-14"
+    },
+    {
+      "id": "axios-request-cancel-race",
+      "title": "搜索、切页和切会话时如何取消旧请求并防止晚到覆盖？",
+      "questionType": "scenario",
+      "track": "工程化",
+      "difficulty": "project",
+      "prompt": "即使 AbortController 已调用，为什么仍要做响应身份校验？",
+      "answerOutline": [
+        "每次操作创建 controller，下一次操作或卸载时 abort；取消错误与真实失败分开处理。",
+        "abort 只能尽力停止网络和读取，响应可能已经进入事件队列，因此提交状态前仍校验 requestId/generationId。",
+        "旧请求晚到时丢弃，不覆盖当前查询；loading 也按请求身份收口，避免旧请求把新请求的 loading 关掉。",
+        "服务端长任务要监听断连并协作取消，否则前端停读并不代表计算停止。"
+      ],
+      "tags": ["AbortController", "race condition", "requestId", "cleanup"],
+      "sources": ["mdn-abort-controller", "axios-interceptors"],
+      "relatedQuestionIds": ["ai-conversation-race-control", "binary-stream-resume"],
+      "companyOccurrences": [],
+      "sourceStatus": "verified",
+      "createdAt": "2026-07-14",
+      "updatedAt": "2026-07-14"
+    },
+    {
+      "id": "request-observability-contract",
+      "title": "统一请求层怎样设计错误契约和全链路可观测性？",
+      "questionType": "scenario",
+      "track": "工程化",
+      "difficulty": "project",
+      "prompt": "普通 JSON、SSE 和文件流失败形态不同，业务组件如何收到统一但不丢细节的错误？",
+      "answerOutline": [
+        "定义领域错误 kind、code、retryable、traceId、httpStatus 和 cause，保留传输层细节但不让组件解析任意响应。",
+        "请求生成 correlation id，前端日志、网关和后端 trace 贯通；敏感 token、prompt 和文件内容默认脱敏。",
+        "SSE 区分握手失败、协议解析失败、interrupted 和服务端 error event；文件流记录 offset/ETag。",
+        "UI 根据 retryable 和用户动作决定重试、降级或跳登录，监控按错误阶段和租户聚合。"
+      ],
+      "tags": ["observability", "error contract", "traceId", "SSE"],
+      "sources": ["axios-interceptors", "whatwg-sse-stream", "w3c-trace-context"],
+      "relatedQuestionIds": ["axios-stream-pipeline", "ai-stream-event-ordering", "binary-stream-resume"],
+      "companyOccurrences": [],
+      "sourceStatus": "verified",
+      "createdAt": "2026-07-14",
+      "updatedAt": "2026-07-14"
+    },
+    {
+      "id": "rbac-resource-permission",
+      "title": "RBAC 有了角色权限，为什么还会出现资源越权？",
+      "questionType": "scenario",
+      "track": "工程化",
+      "difficulty": "project",
+      "prompt": "用户有 document:read 权限，是否就能读取任意租户任意文档？后端应检查哪些维度？",
+      "answerOutline": [
+        "RBAC action 只是第一层，还要校验 tenant、resource ownership、数据范围和对象当前状态。",
+        "服务端查询直接带授权 scope，而不是先按用户给的 documentId 查出对象再在前端隐藏。",
+        "避免可枚举 ID 带来的 BOLA；对拒绝、跨租户尝试和高风险操作记录审计。",
+        "前端权限组件只改善体验，接口必须对每次请求重新做资源级判断。"
+      ],
+      "tags": ["RBAC", "BOLA", "resource ownership", "tenant"],
+      "sources": ["owasp-authorization"],
+      "relatedQuestionIds": ["rbac-defense-depth", "tenant-isolation", "next-proxy-auth-boundary"],
+      "companyOccurrences": [],
+      "sourceStatus": "verified",
+      "createdAt": "2026-07-14",
+      "updatedAt": "2026-07-14"
+    },
+    {
+      "id": "rbac-permission-change",
+      "title": "角色权限被管理员修改后，前端缓存何时失效？",
+      "questionType": "scenario",
+      "track": "工程化",
+      "difficulty": "project",
+      "prompt": "用户页面开着时被撤权，怎样避免旧权限列表继续展示和调用高风险功能？",
+      "answerOutline": [
+        "权限响应带 version/issuedAt，前端只做短期缓存；切租户、重新登录和收到权限变更事件时立即失效。",
+        "高风险操作后端每次校验当前权限，不能依赖 access token 中长期不变的旧角色。",
+        "接口 403 后刷新权限快照并撤掉相关 UI，清理已打开弹窗和缓存数据。",
+        "权限变更通过审计日志可追踪，避免静默刷新导致问题无法定位。"
+      ],
+      "tags": ["RBAC", "cache invalidation", "permission version", "403"],
+      "sources": ["owasp-authorization"],
+      "relatedQuestionIds": ["rbac-defense-depth", "rbac-resource-permission"],
+      "companyOccurrences": [],
+      "sourceStatus": "verified",
+      "createdAt": "2026-07-14",
+      "updatedAt": "2026-07-14"
+    },
+    {
+      "id": "skill-version-evaluation",
+      "title": "业务 Skill 如何版本化、灰度和评估效果？",
+      "questionType": "scenario",
+      "track": "AI 前端",
+      "difficulty": "project",
+      "prompt": "提示词、工具说明或输出约定变化后，怎样证明新版 Skill 更好且能安全回滚？",
+      "answerOutline": [
+        "Skill 作为带 SKILL.md 的版本化文件包发布，记录输入契约、依赖工具、权限和变更说明。",
+        "建立离线样本集评估正确率、工具成功率、引用覆盖和成本；线上按 tenant/流量稳定分桶灰度。",
+        "trace 记录 skillVersion、模型、工具参数和结果摘要，失败可复现但敏感数据需脱敏。",
+        "指标恶化通过 kill switch 回滚到旧版，兼容期保留多版本解析与输出契约。"
+      ],
+      "tags": ["Skill", "versioning", "evaluation", "rollout"],
+      "sources": ["openai-skills", "vercel-feature-flags"],
+      "relatedQuestionIds": ["react-skill-design", "agent-loop-termination", "feature-flag-safe-release"],
+      "companyOccurrences": [],
+      "sourceStatus": "verified",
+      "createdAt": "2026-07-14",
+      "updatedAt": "2026-07-14"
+    },
+    {
+      "id": "agent-loop-termination",
+      "title": "ReAct 工具循环怎样设置重试和终止条件？",
+      "questionType": "scenario",
+      "track": "AI 前端",
+      "difficulty": "project",
+      "prompt": "检索分数低、工具报错或模型重复调用同一 Skill 时，怎样防止无限循环和成本失控？",
+      "answerOutline": [
+        "设置最大 steps、总 token/cost、总耗时和单工具重试预算，任一达到就进入可解释终态。",
+        "区分可重试传输错误、需要改写输入的低置信度、权限拒绝和永久业务错误。",
+        "检测相同 tool+args 重复和无新 Observation 的循环，触发改写、请求澄清或停止。",
+        "前端展示当前阶段和可取消入口，不暴露敏感推理原文；终态保留引用、trace 和失败原因。"
+      ],
+      "tags": ["ReAct", "termination", "retry budget", "tool loop"],
+      "sources": ["react-recover-paper", "openai-skills"],
+      "relatedQuestionIds": ["react-skill-design", "skill-version-evaluation"],
+      "companyOccurrences": [],
+      "sourceStatus": "verified",
+      "createdAt": "2026-07-14",
+      "updatedAt": "2026-07-14"
+    },
+    {
+      "id": "openapi-breaking-change",
+      "title": "OpenAPI 自动生成类型后，如何阻止破坏性接口变更？",
+      "questionType": "scenario",
+      "track": "工程化",
+      "difficulty": "project",
+      "prompt": "后端删除字段、修改可空性或枚举值时，生成代码为什么还不够，CI 应增加哪些契约检查？",
+      "answerOutline": [
+        "CI 拉取固定版本 spec，生成客户端到临时目录并检查 diff，禁止开发者手改生成产物。",
+        "对字段删除、required/nullable、类型和枚举收窄做 breaking-change 检测，PR 展示受影响接口。",
+        "生成后运行 TypeScript 编译和关键契约测试；运行时对外部响应仍需校验，类型不会保护脏数据。",
+        "破坏性变更通过新版本或兼容窗口发布，前后端按部署顺序保持双读/双写。"
+      ],
+      "tags": ["OpenAPI", "codegen", "breaking change", "contract test"],
+      "sources": ["swagger-codegen", "openapi-specification", "github-actions"],
+      "relatedQuestionIds": ["cicd-openapi", "ai-card-versioning-fallback"],
+      "companyOccurrences": [],
+      "sourceStatus": "verified",
+      "createdAt": "2026-07-14",
+      "updatedAt": "2026-07-14"
+    },
+    {
+      "id": "cicd-safe-deploy",
+      "title": "GitHub Actions 自动部署如何做并发控制、审批和回滚？",
+      "questionType": "scenario",
+      "track": "工程化",
+      "difficulty": "project",
+      "prompt": "连续合并多个 commit 时，怎样避免旧构建覆盖新版本，并让生产发布可审计、可快速回退？",
+      "answerOutline": [
+        "验证与构建绑定 commit SHA，产物不可变；部署 job 使用 environment 和 concurrency，取消过时 pending/running 发布。",
+        "生产环境设置审批、分支保护和最小权限 secrets，部署记录关联 commit、操作者和 URL。",
+        "先小流量/预览验证健康指标，再提升流量；回滚切回上一份已验证产物而不是现场重新构建。",
+        "数据库或协议变化采用向后兼容的 expand/contract，保证应用回滚不会被新 schema 卡死。"
+      ],
+      "tags": ["GitHub Actions", "deployment", "concurrency", "rollback"],
+      "sources": ["github-deployments", "github-actions"],
+      "relatedQuestionIds": ["cicd-openapi", "feature-flag-safe-release"],
+      "companyOccurrences": [],
+      "sourceStatus": "verified",
+      "createdAt": "2026-07-14",
+      "updatedAt": "2026-07-14"
+    },
+    {
+      "id": "performance-long-task-memory",
+      "title": "长会话越来越卡，如何区分长任务、重渲染和内存泄漏？",
+      "questionType": "scenario",
+      "track": "性能·网络",
+      "difficulty": "project",
+      "prompt": "用户聊半小时后输入卡顿，怎样建立可复现、可量化的定位闭环？",
+      "answerOutline": [
+        "固定会话规模和操作脚本，记录 INP/长任务、React commit 时长、DOM 节点、JS heap 和事件监听数量。",
+        "Performance flame chart 看 Markdown/布局/脚本长任务，Profiler 看哪些组件因 token 更新重渲染。",
+        "heap snapshot 对比增长路径，检查未 abort reader、未清 timer/listener、闭包持有整段消息和 Blob URL 未释放。",
+        "分别用帧级批量、虚拟列表、细粒度订阅和 cleanup 修复，再用同一基线量化收益。"
+      ],
+      "tags": ["performance", "long task", "memory leak", "Profiler"],
+      "sources": ["web-vitals", "webdev-virtual-list", "react-use-effect", "chrome-memory-problems"],
+      "relatedQuestionIds": ["ai-long-conversation-rendering", "react-memo-callback-identity"],
+      "companyOccurrences": [],
+      "sourceStatus": "verified",
+      "createdAt": "2026-07-14",
+      "updatedAt": "2026-07-14"
+    },
+    {
+      "id": "performance-variable-height-list",
+      "title": "消息高度不固定时，虚拟列表如何测量和纠偏？",
+      "questionType": "scenario",
+      "track": "性能·网络",
+      "difficulty": "project",
+      "prompt": "Markdown、图片和异步卡片让行高不断变化，固定高度估算会跳动，怎样维护 offset 和滚动锚点？",
+      "answerOutline": [
+        "首次使用估算高度渲染，ResizeObserver/测量回调拿到真实高度后更新按 messageId 缓存的 size map。",
+        "高度变化只重算受影响项之后的 offset，并对当前锚点做 scrollTop 补偿。",
+        "图片、文件卡提前预留 aspect ratio/骨架；同一 partId 更新卡片时保留组件身份和测量缓存。",
+        "设置合理 overscan，快速滚动时优先占位，停止后补完整 Markdown，平衡空白闪烁与渲染成本。"
+      ],
+      "tags": ["virtual list", "variable height", "ResizeObserver", "scroll compensation"],
+      "sources": ["webdev-virtual-list", "mdn-scroll-anchoring"],
+      "relatedQuestionIds": ["ai-long-conversation-rendering", "cls-diagnosis"],
+      "companyOccurrences": [],
+      "sourceStatus": "verified",
+      "createdAt": "2026-07-14",
+      "updatedAt": "2026-07-14"
+    },
+    {
       "id": "react-hooks-top-level",
       "title": "React Hooks 为什么不能写在 if 或循环中？",
       "questionType": "concept",
@@ -49,7 +853,16 @@
       "sources": [
         "react-hooks"
       ],
-      "companyOccurrences": [],
+      "relatedQuestionIds": ["react-hooks-selection", "ahooks-vs-react-hooks", "react-effect-usecallback-count"],
+      "companyOccurrences": [
+        {
+          "company": "字节跳动（OD）",
+          "count": 1,
+          "interviewIds": [
+            "interview-2026-07-14-bytedance-od"
+          ]
+        }
+      ],
       "sourceStatus": "verified",
       "createdAt": "2026-07-14",
       "updatedAt": "2026-07-14"
@@ -240,6 +1053,7 @@
         "mdn-abort-controller",
         "mdn-request-animation-frame"
       ],
+      "relatedQuestionIds": ["ai-conversation-race-control", "ai-stream-event-ordering", "binary-stream-resume"],
       "companyOccurrences": [],
       "sourceStatus": "verified",
       "createdAt": "2026-07-14",
@@ -268,6 +1082,7 @@
         "openai-token-counting",
         "openai-compaction"
       ],
+      "relatedQuestionIds": ["ai-long-conversation-rendering", "ai-message-storage-reconciliation"],
       "companyOccurrences": [],
       "sourceStatus": "verified",
       "createdAt": "2026-07-14",
@@ -296,6 +1111,7 @@
         "react-recover-paper",
         "openai-skills"
       ],
+      "relatedQuestionIds": ["skill-version-evaluation", "agent-loop-termination"],
       "companyOccurrences": [],
       "sourceStatus": "verified",
       "createdAt": "2026-07-14",
@@ -327,6 +1143,7 @@
         "next-multi-tenant",
         "vercel-feature-flags"
       ],
+      "relatedQuestionIds": ["tenant-config-bootstrap", "tenant-hydration-theme", "tenant-isolation", "feature-flag-safe-release"],
       "companyOccurrences": [],
       "sourceStatus": "verified",
       "createdAt": "2026-07-14",
@@ -357,6 +1174,7 @@
         "next-server-client-components",
         "react-hydrate-root"
       ],
+      "relatedQuestionIds": ["next-server-client-boundary", "next-cache-revalidation", "next-hydration-mismatch", "next-proxy-auth-boundary"],
       "companyOccurrences": [],
       "sourceStatus": "verified",
       "createdAt": "2026-07-14",
@@ -387,6 +1205,7 @@
         "mdn-text-decoder-stream",
         "mdn-abort-controller"
       ],
+      "relatedQuestionIds": ["axios-refresh-single-flight", "axios-retry-idempotency", "axios-request-cancel-race", "request-observability-contract"],
       "companyOccurrences": [],
       "sourceStatus": "verified",
       "createdAt": "2026-07-14",
@@ -414,6 +1233,7 @@
       "sources": [
         "owasp-authorization"
       ],
+      "relatedQuestionIds": ["rbac-resource-permission", "rbac-permission-change", "next-proxy-auth-boundary"],
       "companyOccurrences": [],
       "sourceStatus": "verified",
       "createdAt": "2026-07-14",
@@ -440,6 +1260,7 @@
       "sources": [
         "web-vitals"
       ],
+      "relatedQuestionIds": ["tenant-hydration-theme", "performance-variable-height-list"],
       "companyOccurrences": [],
       "sourceStatus": "verified",
       "createdAt": "2026-07-14",
@@ -492,6 +1313,7 @@
       "sources": [
         "github-actions"
       ],
+      "relatedQuestionIds": ["openapi-breaking-change", "cicd-safe-deploy"],
       "companyOccurrences": [],
       "sourceStatus": "verified",
       "createdAt": "2026-07-14",

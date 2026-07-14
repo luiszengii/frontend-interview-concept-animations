@@ -10,8 +10,9 @@
 - .codex/skills/interview-recap-curator/ 是持续录入复盘的 Codex Skill 源码
 - .codex/skills/design-interview-animations/ 是避免模板化动画的设计 Skill 源码
 
-- 34 组概念动画，覆盖 JavaScript、React、工程化、网络性能与 AI 前端
-- 51 个针对真实项目追问新增的强化步骤
+- 37 组概念动画，覆盖 JavaScript、React、工程化、网络性能与 AI 前端
+- 56 道来源可查询的文字题，其中 8 道关联本次字节跳动（OD）真实复盘
+- 题目详情支持“继续深挖”，有动画的题目可在新页面打开独立 scene URL
 - 静态多页、无框架依赖；动画、题库和题目详情各自拥有可分享 URL
 - 桌面端采用双栏滚动叙事，移动端采用上方动画、下方讲解布局
 - 支持触控横滑、安全区和“减少动态效果”系统设置
@@ -36,6 +37,8 @@ npm run dev
 - 工程化：Vite/Webpack、微前端、Axios/SSE 管道、Next.js、多租户、RBAC
 - 网络与性能：缓存、URL 到页面、CORS、HTTP/2、Web Vitals、性能排查
 - AI 前端：RAG、流式 Token、上下文压缩、ReAct 与 Skill
+
+最新增加的 AI 前端专题覆盖多轮消息状态、长会话虚拟渲染、结构化卡片协议，以及二进制文件流的断点恢复。
 
 ## 维护方式
 

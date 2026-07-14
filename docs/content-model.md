@@ -5,14 +5,17 @@
     Question ──引用──> Source
         │
         ├──绑定──> Animation Scene（可选）
+        ├──继续深挖──> Related Question（可选）
         │
         └──被记录在──> Interview Recap ──属于──> Company
 
 ## 题目
 
-题目保存在 `data/questions.json`，使用稳定、全局唯一的 `id`。每道题至少有一个来源 ID，并可选关联一个动画场景 ID。
+题目保存在 `data/questions.json`，使用稳定、全局唯一的 `id`。每道题至少有一个来源 ID，并可选关联一个动画场景 ID；`relatedQuestionIds` 用来组成同一项目点的继续追问题链。
 
-公司出现次数使用 `companyOccurrences` 保存，每一项至少包含公司名称、次数和关联复盘 ID。不要只保存一个无法追溯的总数字。
+文字题是导航入口：存在 `animationSceneId` 时，题库卡片和详情页显示“查看概念动画”按钮，并在新页面打开稳定的 `index.html?scene={id}` URL。动画页不强制提供反向题目链接。
+
+公司出现次数使用 `companyOccurrences` 保存，每一项至少包含公司名称、次数和关联复盘 ID。次数必须与复盘 ID 数量一致，而且复盘记录必须反向包含该题；不要只保存一个无法追溯的总数字。
 
 ## 来源
 

@@ -49,7 +49,7 @@ function render() {
       '<div class="tags">' + question.tags.map((tag) => '<span class="tag">' + escapeHtml(tag) + '</span>').join("") + '</div>' +
       '<div class="company"><strong>公司出现：' + occurrence.total + ' 次</strong><br>' + escapeHtml(occurrence.text) + '</div>' +
       '<details><summary>展开高分回答骨架</summary><ol>' + question.answerOutline.map((item) => '<li>' + escapeHtml(item) + '</li>').join("") + '</ol></details>' +
-      '<div class="sources"><a class="animation-link" href="question.html?id=' + encodeURIComponent(question.id) + '">独立题目页 →</a>' + sources.map((source) => '<a href="' + escapeHtml(source.url) + '" target="_blank" rel="noreferrer">来源：' + escapeHtml(source.publisher) + '</a>').join("") + (question.animationSceneId ? '<a class="animation-link" href="index.html?scene=' + encodeURIComponent(question.animationSceneId) + '">查看概念动画 →</a>' : "") + '</div>' +
+      '<div class="sources"><a class="animation-link" href="question.html?id=' + encodeURIComponent(question.id) + '">独立题目页 →</a>' + sources.map((source) => '<a href="' + escapeHtml(source.url) + '" target="_blank" rel="noreferrer">来源：' + escapeHtml(source.publisher) + '</a>').join("") + (question.animationSceneId ? '<a class="animation-button" href="index.html?scene=' + encodeURIComponent(question.animationSceneId) + '" target="_blank" rel="noreferrer">▶ 查看概念动画</a>' : "") + '</div>' +
       '<div class="status ' + (question.sourceStatus === "verified" ? "" : "review") + '">' + labelStatus(question.sourceStatus) + '</div>';
     list.appendChild(card);
   });

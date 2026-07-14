@@ -210,6 +210,167 @@
       "publisher": "OWASP",
       "url": "https://cheatsheetseries.owasp.org/cheatsheets/Authorization_Cheat_Sheet.html",
       "kind": "official-docs"
+    },
+    {
+      "id": "react-built-in-hooks",
+      "title": "Built-in React Hooks",
+      "publisher": "React",
+      "url": "https://react.dev/reference/react/hooks",
+      "kind": "official-docs"
+    },
+    {
+      "id": "react-use-callback",
+      "title": "useCallback",
+      "publisher": "React",
+      "url": "https://react.dev/reference/react/useCallback",
+      "kind": "official-docs"
+    },
+    {
+      "id": "react-use-effect",
+      "title": "useEffect",
+      "publisher": "React",
+      "url": "https://react.dev/reference/react/useEffect",
+      "kind": "official-docs"
+    },
+    {
+      "id": "react-strict-mode",
+      "title": "StrictMode",
+      "publisher": "React",
+      "url": "https://react.dev/reference/react/StrictMode",
+      "kind": "official-docs"
+    },
+    {
+      "id": "react-use-transition",
+      "title": "useTransition",
+      "publisher": "React",
+      "url": "https://react.dev/reference/react/useTransition",
+      "kind": "official-docs"
+    },
+    {
+      "id": "ahooks-quick-start",
+      "title": "ahooks 3.0 Quick Start",
+      "publisher": "ahooks",
+      "url": "https://ahooks.js.org/hooks/",
+      "kind": "official-docs"
+    },
+    {
+      "id": "ai-sdk-streaming-data",
+      "title": "AI SDK UI: Streaming Custom Data",
+      "publisher": "Vercel AI SDK",
+      "url": "https://ai-sdk.dev/docs/ai-sdk-ui/streaming-data",
+      "kind": "official-docs"
+    },
+    {
+      "id": "whatwg-sse-stream",
+      "title": "Server-sent events: parsing an event stream",
+      "publisher": "WHATWG HTML",
+      "url": "https://html.spec.whatwg.org/multipage/server-sent-events.html",
+      "kind": "specification"
+    },
+    {
+      "id": "mdn-http-range",
+      "title": "HTTP range requests",
+      "publisher": "MDN Web Docs",
+      "url": "https://developer.mozilla.org/en-US/docs/Web/HTTP/Guides/Range_requests",
+      "kind": "official-docs"
+    },
+    {
+      "id": "mdn-readable-stream-reader",
+      "title": "ReadableStream: getReader() method",
+      "publisher": "MDN Web Docs",
+      "url": "https://developer.mozilla.org/en-US/docs/Web/API/ReadableStream/getReader",
+      "kind": "official-docs"
+    },
+    {
+      "id": "webdev-virtual-list",
+      "title": "Virtualize large lists with react-window",
+      "publisher": "web.dev",
+      "url": "https://web.dev/articles/virtualize-long-lists-react-window",
+      "kind": "official-docs"
+    },
+    {
+      "id": "mdn-scroll-anchoring",
+      "title": "Overview of scroll anchoring",
+      "publisher": "MDN Web Docs",
+      "url": "https://developer.mozilla.org/en-US/docs/Web/CSS/Guides/Scroll_anchoring/Overview",
+      "kind": "official-docs"
+    },
+    {
+      "id": "owasp-xss-prevention",
+      "title": "Cross Site Scripting Prevention Cheat Sheet",
+      "publisher": "OWASP",
+      "url": "https://cheatsheetseries.owasp.org/cheatsheets/Cross_Site_Scripting_Prevention_Cheat_Sheet.html",
+      "kind": "official-docs"
+    },
+    {
+      "id": "next-revalidate-path",
+      "title": "revalidatePath",
+      "publisher": "Next.js",
+      "url": "https://nextjs.org/docs/app/api-reference/functions/revalidatePath",
+      "kind": "official-docs"
+    },
+    {
+      "id": "github-deployments",
+      "title": "Deploying with GitHub Actions",
+      "publisher": "GitHub Docs",
+      "url": "https://docs.github.com/en/actions/how-tos/deploy/configure-and-manage-deployments/control-deployments",
+      "kind": "official-docs"
+    },
+    {
+      "id": "swagger-codegen",
+      "title": "Swagger Codegen",
+      "publisher": "Swagger",
+      "url": "https://swagger.io/docs/open-source-tools/swagger-codegen/codegen-v3/about/",
+      "kind": "official-docs"
+    },
+    {
+      "id": "mdn-idempotent",
+      "title": "Idempotent",
+      "publisher": "MDN Web Docs",
+      "url": "https://developer.mozilla.org/en-US/docs/Glossary/Idempotent",
+      "kind": "official-docs"
+    },
+    {
+      "id": "w3c-trace-context",
+      "title": "Trace Context",
+      "publisher": "W3C",
+      "url": "https://www.w3.org/TR/trace-context/",
+      "kind": "specification"
+    },
+    {
+      "id": "openapi-specification",
+      "title": "OpenAPI Specification",
+      "publisher": "OpenAPI Initiative",
+      "url": "https://spec.openapis.org/oas/latest.html",
+      "kind": "specification"
+    },
+    {
+      "id": "chrome-memory-problems",
+      "title": "Fix memory problems",
+      "publisher": "Chrome for Developers",
+      "url": "https://developer.chrome.com/docs/devtools/memory-problems",
+      "kind": "official-docs"
+    },
+    {
+      "id": "ai-sdk-message-persistence",
+      "title": "AI SDK UI: Chatbot Message Persistence",
+      "publisher": "Vercel AI SDK",
+      "url": "https://ai-sdk.dev/docs/ai-sdk-ui/chatbot-message-persistence",
+      "kind": "official-docs"
+    },
+    {
+      "id": "ai-sdk-resume-streams",
+      "title": "AI SDK UI: Chatbot Resume Streams",
+      "publisher": "Vercel AI SDK",
+      "url": "https://ai-sdk.dev/docs/ai-sdk-ui/chatbot-resume-streams",
+      "kind": "official-docs"
+    },
+    {
+      "id": "mdn-file-system-writable",
+      "title": "FileSystemWritableFileStream",
+      "publisher": "MDN Web Docs",
+      "url": "https://developer.mozilla.org/en-US/docs/Web/API/FileSystemWritableFileStream",
+      "kind": "official-docs"
     }
   ]
 }

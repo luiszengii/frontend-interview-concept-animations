@@ -1,4 +1,32 @@
 {
   "schemaVersion": 1,
-  "interviews": []
+  "interviews": [
+    {
+      "id": "interview-2026-07-14-bytedance-od",
+      "date": "2026-07-14",
+      "company": "字节跳动（OD）",
+      "role": "前端开发",
+      "questionIds": [
+        "ai-multi-turn-state-model",
+        "ai-long-conversation-rendering",
+        "ai-structured-message-protocol",
+        "binary-stream-resume",
+        "react-hooks-selection",
+        "ahooks-vs-react-hooks",
+        "react-hooks-top-level",
+        "react-effect-usecallback-count"
+      ],
+      "rawQuestions": [
+        "前端怎么做多轮对话，消息怎么组织和渲染？",
+        "很长的对话内容怎么加载，怎么避免页面越来越卡？",
+        "特殊的卡片式内容怎么处理？前后端如何约定角标、卡片等特殊符号？",
+        "后端流式返回文件二进制信息，传到一半卡住或断掉，前端怎么处理？",
+        "React 用过哪些 Hooks？",
+        "A Hooks 跟 React Hooks 有什么区别？（按上下文记录为疑似 ahooks）",
+        "Hooks 能不能写在 if 或 for 循环里？",
+        "function component 中 state 变化，useEffect 依赖它并调用 useCallback 返回的函数；state 变一次会触发多少次 callback？"
+      ],
+      "notes": "AI 对话流被连续深挖，重点是多轮状态、长会话渲染、结构化内容协议和二进制流失败恢复。React 题重点考调用语义，而不是只背 Hook 名称。"
+    }
+  ]
 }

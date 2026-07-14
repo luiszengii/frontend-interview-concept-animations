@@ -4,6 +4,7 @@ import vm from "node:vm";
 const html = await readFile(new URL("../index.html", import.meta.url), "utf8");
 const distinctSceneCss = await readFile(new URL("../assets/interview-scenes.css", import.meta.url), "utf8");
 const distinctSceneScript = await readFile(new URL("../assets/interview-scenes.js", import.meta.url), "utf8");
+const questionData = JSON.parse(await readFile(new URL("../data/questions.json", import.meta.url), "utf8"));
 const scriptTags = [...html.matchAll(/<script(?:\s[^>]*)?>([\s\S]*?)<\/script>/gi)];
 const scripts = await Promise.all(
   scriptTags.map(async (match) => {
@@ -79,6 +80,12 @@ for (const scene of scenes) {
   }
   ids.add(scene.id);
   stepCount += scene.steps.length;
+}
+
+for (const question of questionData.questions) {
+  if (question.animationSceneId && !ids.has(question.animationSceneId)) {
+    throw new Error(`题目关联了不存在的动画场景：${question.id} -> ${question.animationSceneId}`);
+  }
 }
 
 console.log(`检查通过：${scenes.length} 个场景，${stepCount} 个滚动步骤，${scripts.length} 段脚本。`);

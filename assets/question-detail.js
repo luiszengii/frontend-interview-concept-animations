@@ -52,6 +52,20 @@ async function start() {
       link.appendChild(publisher);
       $("#sources").appendChild(link);
     });
+    const questionById = new Map(payloads[0].questions.map((item) => [item.id, item]));
+    const relatedQuestions = (question.relatedQuestionIds || []).map((questionId) => questionById.get(questionId)).filter(Boolean);
+    if (relatedQuestions.length) {
+      relatedQuestions.forEach((related) => {
+        const link = document.createElement("a");
+        link.href = "question.html?id=" + encodeURIComponent(related.id);
+        link.textContent = related.title;
+        const meta = document.createElement("small");
+        meta.textContent = related.track + " · " + (related.questionType === "scenario" ? "场景 / 项目题" : "八股 / 原理题");
+        link.appendChild(meta);
+        $("#related").appendChild(link);
+      });
+      $("#relatedBlock").hidden = false;
+    }
     if (question.animationSceneId) {
       $("#animation").href = "index.html?scene=" + encodeURIComponent(question.animationSceneId);
       $("#animation").hidden = false;
