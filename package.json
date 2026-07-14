@@ -1,0 +1,14 @@
+{
+  "name": "frontend-interview-concept-animations",
+  "version": "1.0.0",
+  "private": true,
+  "description": "可滚动交互的前端面试概念动画站",
+  "type": "module",
+  "scripts": {
+    "check": "node scripts/check-html.mjs",
+    "dev": "node scripts/serve.mjs"
+  },
+  "engines": {
+    "node": ">=18"
+  }
+}

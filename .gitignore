@@ -1,0 +1,6 @@
+.DS_Store
+node_modules/
+npm-debug.log*
+
+# 手机端临时分发文件；GitHub 项目以 index.html 为唯一页面入口。
+曾令军-前端面试概念动画-明日强化版.html
