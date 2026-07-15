@@ -3,7 +3,7 @@
 .back:hover{color:#fff}
 .detail-heading{display:flex;align-items:flex-start;justify-content:space-between;gap:20px}
 .detail-heading h1{font-size:clamp(28px,5vw,44px);line-height:1.18;letter-spacing:-.8px;margin:7px 0 0}
-#share{flex:none;border:1px solid var(--line);background:var(--panel2);color:var(--txt);border-radius:9px;min-height:42px;padding:0 13px;cursor:pointer}
+#share{flex:none;border:1px solid var(--line);background:var(--panel-2);color:var(--txt);border-radius:9px;min-height:42px;padding:0 13px;cursor:pointer}
 #share:hover{border-color:var(--sync)}
 .detail-meta{display:flex;flex-wrap:wrap;gap:7px;margin:20px 0 28px}
 .detail-block{border:1px solid var(--line);border-radius:14px;background:var(--panel);padding:20px;margin-top:14px}
@@ -11,6 +11,7 @@
 .lead{font-size:18px;line-height:1.7;margin:0}
 .answer{margin:0;padding-left:24px;color:var(--sub);line-height:1.8}
 .answer li+li{margin-top:7px}
+.detail-answer{margin:0;padding:0;border:0;background:transparent}.detail-answer summary{min-height:44px;display:flex;align-items:center;font-size:15px;font-weight:700}.detail-answer .full-answer-body{font-size:15px;line-height:1.85;color:var(--txt)}
 .detail-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px}
 .company-row{display:flex;justify-content:space-between;gap:12px;padding:9px 0;border-bottom:1px solid var(--line);color:var(--sub)}
 .company-row:last-child{border-bottom:0}

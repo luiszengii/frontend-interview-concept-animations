@@ -26,6 +26,11 @@ async function start() {
       item.textContent = value;
       $("#answer").appendChild(item);
     });
+    question.fullAnswer.forEach((value) => {
+      const paragraph = document.createElement("p");
+      paragraph.textContent = value;
+      $("#fullAnswer").appendChild(paragraph);
+    });
     const companies = question.companyOccurrences || [];
     if (!companies.length) {
       $("#companies").innerHTML = '<p class="empty-note">暂无真实面试复盘记录。公司和次数只会从你的复盘中累积，不从网络面经推测。</p>';

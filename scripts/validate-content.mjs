@@ -21,6 +21,8 @@ for (const interview of interviewData.interviews) {
 for (const question of questionData.questions) {
   if (!question.id || !question.title || !question.prompt || !question.questionType || !question.track) throw new Error("题目字段不完整：" + (question.id || "unknown"));
   if (questionIds.has(question.id)) throw new Error("题目 id 重复：" + question.id);
+  if (!Array.isArray(question.answerOutline) || question.answerOutline.length === 0) throw new Error("题目缺少回答骨架：" + question.id);
+  if (!Array.isArray(question.fullAnswer) || question.fullAnswer.length < 2 || question.fullAnswer.some((paragraph) => typeof paragraph !== "string" || paragraph.trim().length < 30)) throw new Error("题目缺少可学习的正式回答：" + question.id);
   if (!Array.isArray(question.sources) || question.sources.length === 0) throw new Error("题目缺少来源：" + question.id);
   for (const sourceId of question.sources) { if (!sourceIds.has(sourceId)) throw new Error("题目引用了不存在的来源：" + question.id + " -> " + sourceId); }
   if (!Array.isArray(question.companyOccurrences)) throw new Error("companyOccurrences 必须是数组：" + question.id);

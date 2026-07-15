@@ -1,5 +1,5 @@
 {
-  "schemaVersion": 1,
+  "schemaVersion": 2,
   "questions": [
     {
       "id": "js-event-loop-order",
@@ -13,6 +13,10 @@
         "当前宏任务结束后清空微任务队列；微任务可能继续产生微任务。",
         "浏览器有机会渲染，然后取下一个宏任务。",
         "宏任务不是全部执行，而是一轮只取一个。"
+      ],
+      "fullAnswer": [
+        "浏览器执行一段 JavaScript 时，会先把当前调用栈里的同步代码执行完。同步代码运行期间，即使 Promise 已经完成，它的 then 回调也不会立刻插进调用栈，而是进入微任务队列等待。",
+        "当前任务结束后，浏览器会持续清空微任务队列，包括微任务中新产生的微任务。队列清空后浏览器才有机会进行样式计算、布局和绘制，然后再取一个计时器、用户事件或网络回调等宏任务。要注意，渲染是一次机会而不是每轮必然发生。"
       ],
       "tags": [
         "Event Loop",
@@ -42,6 +46,10 @@
         "流式事件按 messageId、partId、sequence 合并；旧序号丢弃、重复序号幂等处理，done/error 明确收口状态。",
         "历史记录以服务端为事实源，本地仅保存草稿、滚动位置和进行中的请求句柄。"
       ],
+      "fullAnswer": [
+        "多轮对话不能只保存一个不断拼接的字符串。前端应以 conversationId 表示会话，以 messageId 表示消息，并把文本、引用、文件、卡片和工具状态拆成有稳定 partId 的 parts。这样一条助手消息即使仍在流式生成，也可以局部更新其中一个 part。",
+        "发送消息时可以先乐观插入用户消息和 pending 助手消息，再用服务端返回的正式 ID 对账。每个流式事件都携带 messageId、partId 和 sequence，前端据此追加或覆盖；重复事件幂等处理，旧序号丢弃，done 或 error 明确结束。刷新后以服务端历史为准，再合并尚未确认的本地草稿。"
+      ],
       "tags": ["AI Chat", "message state", "optimistic UI", "stream reconciliation"],
       "animationSceneId": "ai-conversation-runtime",
       "sources": ["ai-sdk-streaming-data", "ai-sdk-message-persistence", "ai-sdk-resume-streams", "whatwg-sse-stream"],
@@ -64,6 +72,10 @@
         "prepend 前记录锚点元素和容器 scrollHeight，插入后补偿高度差，让用户仍看到同一条消息。",
         "仅当用户贴近底部时自动跟随流式消息；用户上滑阅读历史后显示“回到底部”，不强抢滚动。"
       ],
+      "fullAnswer": [
+        "长对话的关键不是一次把全部历史取回来，而是把数据加载和 DOM 渲染分开控制。历史记录使用 cursor 向上分页，用户接近顶部时才加载更早一页；页面只保留当前窗口附近的 DOM，超出部分由虚拟列表用占位高度表示。",
+        "向列表顶部插入旧消息前，先记录当前锚点元素的位置或 scrollHeight，插入后补偿新增高度，用户看到的消息就不会突然跳走。最后一条消息流式增长时，只有用户仍靠近底部才自动跟随；如果用户已经上滑阅读历史，应显示“回到底部”按钮，而不是强行抢走滚动位置。"
+      ],
       "tags": ["virtual list", "cursor pagination", "scroll anchor", "dynamic height"],
       "animationSceneId": "ai-conversation-runtime",
       "sources": ["webdev-virtual-list", "mdn-scroll-anchoring"],
@@ -85,6 +97,10 @@
         "text_delta 追加文本；card_start/card_patch/card_done 按稳定 partId 更新同一个卡片；citation、file、tool_status 是独立 part。",
         "前端先做 schema 校验，再把 part 交给 renderer registry；未知 type/version 显示安全降级卡并记录遥测。",
         "不要靠自定义符号切字符串：符号可能跨 chunk、出现在正文或转义失败，协议边界和展示语义必须分离。"
+      ],
+      "fullAnswer": [
+        "角标、引用和业务卡片不应该靠在模型文本中约定特殊符号来解析，因为符号可能出现在正文里，也可能跨两个网络 chunk。更可靠的做法是先用 SSE 事件边界切出完整消息，再用包含 type、messageId、partId、sequence、schemaVersion 和 payload 的结构化信封表达业务语义。",
+        "例如 text_delta 只追加文本，card_start 创建卡片，card_patch 更新同一个 partId，card_done 把状态收口，citation 则是独立引用 part。前端先校验 schema，再交给 renderer registry 选择组件。未知 type 或版本不能让整条消息崩溃，应展示安全降级卡、保留原始 trace 并上报监控。"
       ],
       "tags": ["SSE protocol", "message parts", "card renderer", "schema version"],
       "animationSceneId": "ai-structured-parts",
@@ -109,6 +125,10 @@
         "若 ETag 变化或服务端返回 200，说明资源版本不一致，丢弃旧分片从头开始；416 则重新核对总长度。",
         "小文件可组 Blob；大文件要边读边写到 OPFS/File System Access 等可用的持久化目标。仅存页面内存无法跨刷新恢复，结束后还要校验总长度和 hash。"
       ],
+      "fullAnswer": [
+        "断点续传首先取决于服务端能力。前端要确认资源有稳定的文件标识和 ETag，并且服务端支持 Accept-Ranges。读取流时只记录已经确认写入本地目标的 offset；如果长时间没有新字节，就取消当前 reader，并保存 fileId、offset、ETag 和校验信息。",
+        "重连时发送 Range: bytes=offset- 和 If-Range: ETag，只有收到正确的 206 与 Content-Range 才能继续追加。如果返回 200、ETag 改变或区间不匹配，旧分片必须作废。大文件应边读边写到可持久化目标，不能全部堆在页面内存里；结束后还要核对总长度和 hash，流关闭本身不等于文件完整。"
+      ],
       "tags": ["binary stream", "Range", "206", "ETag", "resume"],
       "animationSceneId": "binary-stream-resume",
       "sources": ["mdn-http-range", "mdn-readable-stream-reader", "mdn-abort-controller", "mdn-file-system-writable"],
@@ -131,6 +151,10 @@
         "useMemo 缓存昂贵计算，useCallback 缓存函数引用；二者是性能工具，不负责阻止函数被调用。",
         "useTransition/useDeferredValue 把非紧急更新降优先级；自定义 Hook 用来复用有状态逻辑，而不是共享状态实例。"
       ],
+      "fullAnswer": [
+        "选择 Hook 要从数据职责出发，而不是背名称。简单且会影响页面显示的局部值用 useState；多个事件驱动、状态转换规则复杂时用 useReducer；不会影响渲染的 AbortController、计时器和 DOM 引用放 useRef；与网络、订阅或浏览器 API 同步才使用 useEffect。",
+        "useMemo 用来缓存昂贵计算的结果，useCallback 用来稳定函数引用，它们都是性能工具，不会自动阻止函数执行。useTransition 或 useDeferredValue 可以降低非紧急渲染的优先级。自定义 Hook 的价值是复用一套有状态逻辑，但每次调用仍然拥有独立状态。"
+      ],
       "tags": ["Hooks", "useState", "useReducer", "useEffect", "useRef"],
       "sources": ["react-built-in-hooks"],
       "relatedQuestionIds": ["react-state-ref-reducer", "react-effect-lifecycle", "react-memo-callback-identity"],
@@ -150,6 +174,10 @@
         "React Hooks 是 React 提供的状态与生命周期原语，并受顶层调用规则约束。",
         "ahooks 是第三方 Hook 工具库，基于 React Hooks 封装 useRequest、轮询、防抖、缓存等常见业务模式，不是另一套运行时。",
         "选择 ahooks 要评估包体积、版本兼容、团队约定和是否真能减少重复边界代码；关键链路仍要理解底层取消、竞态和错误处理。"
+      ],
+      "fullAnswer": [
+        "React Hooks 是 React 官方提供的状态、生命周期和并发能力，例如 useState、useEffect、useRef。ahooks 是建立在这些基础能力之上的第三方 Hook 工具库，封装了请求、防抖、节流、生命周期和浏览器 API 等常见场景，所以两者不是替代关系。",
+        "项目中可以用 ahooks 减少重复代码，但要评估包体积、维护状态、SSR 行为和团队可控性。核心业务如果对取消、缓存、错误模型有特殊要求，可以在 React Hooks 上自行封装；通用且行为与 ahooks 契合的场景则直接复用。面试时还应说明，如果面试官说的 A Hooks 不是 ahooks，需要先确认术语。"
       ],
       "tags": ["ahooks", "React Hooks", "useRequest"],
       "sources": ["react-built-in-hooks", "ahooks-quick-start"],
@@ -172,6 +200,10 @@
         "effect 同时依赖 state 和 callback 也只是一轮 effect，不会因为两个依赖都变而执行两次。",
         "若 callback/effect 再 setState 会产生下一轮；开发 StrictMode 会额外检查初次挂载的 setup/cleanup，因此必须先确认代码、挂载还是更新、开发还是生产。"
       ],
+      "fullAnswer": [
+        "useCallback 的作用是缓存函数引用，而不是调用函数。依赖变化时，React 会在这次渲染中返回一个新的 callback 引用；只有代码真正执行 callback() 时，函数体才会运行。因此 state 改变一次，并不能直接推出 callback 会执行几次。",
+        "如果 effect 依赖这个 state 和 callback，并且 effect 的回调里只调用 callback 一次，那么一次已提交的更新通常调用一次。state 与 callback 引用同时变化仍然只会让同一个 effect 在该次提交后执行一次。开发环境 StrictMode 可能额外执行 setup/cleanup 来检查副作用，但要区分首次挂载检查和真实生产更新。"
+      ],
       "tags": ["useEffect", "useCallback", "dependencies", "StrictMode"],
       "sources": ["react-use-callback", "react-use-effect", "react-strict-mode"],
       "relatedQuestionIds": ["react-effect-lifecycle", "react-effect-stale-closure", "react-memo-callback-identity"],
@@ -192,6 +224,10 @@
         "客户端记录每个 part 的 lastSequence；重复事件幂等丢弃，发现缺口先标记不完整并请求补段或整条快照。",
         "重连携带 Last-Event-ID/lastSequence，服务端从可重放日志续发；无法续发时返回权威快照进行 reconciliation。",
         "done 是终态事件，未收到 done 的连接关闭只能标记 interrupted，不能冒充成功。"
+      ],
+      "fullAnswer": [
+        "网络重连、代理缓冲或多工具并发都可能导致流式事件重复、迟到甚至乱序，所以不能只按到达顺序直接拼字符串。每次生成要有 generationId，每个 part 要有稳定 partId，事件还要携带单调递增的 sequence 或可比较的版本号。",
+        "前端为每个 part 保存最后确认的序号：相同序号直接忽略，更旧序号丢弃，合法的下一序号才应用；如果允许 patch 跳号，就先进入缓冲并请求缺失事件。重连从最后确认 cursor 恢复，最终收到 done 后再拉服务端快照对账，确保本地增量状态与持久化结果一致。"
       ],
       "tags": ["SSE", "sequence", "idempotency", "reconnect"],
       "sources": ["whatwg-sse-stream", "ai-sdk-streaming-data"],
@@ -214,6 +250,10 @@
         "未知类型展示通用占位卡、保留原始 traceId 并上报，而不是把 payload 当 HTML 渲染或直接丢失整条消息。",
         "前后端通过契约测试与灰度 Feature Flag 验证新版本，确认客户端覆盖率后再移除旧解析器。"
       ],
+      "fullAnswer": [
+        "结构化卡片需要把协议版本当成正式契约。事件信封和具体 payload 都应携带 schemaVersion，新增可选字段尽量保持向后兼容；删除字段、改变含义或收窄类型时使用新的版本或新的 card type，而不是让旧前端悄悄误解。",
+        "前端的 renderer registry 按 type 和支持的版本选择组件。收到未知版本时显示通用降级卡，例如“当前版本暂不支持此内容”，同时保留 traceId 并上报。服务端发布新协议时先灰度能够双写或兼容旧版的事件，等客户端覆盖率足够后再停止旧版本。"
+      ],
       "tags": ["schema version", "renderer registry", "fallback", "contract test"],
       "sources": ["ai-sdk-streaming-data", "vercel-feature-flags"],
       "relatedQuestionIds": ["ai-structured-message-protocol", "openapi-breaking-change"],
@@ -234,6 +274,10 @@
         "流式阶段保留稳定前缀，只对尾部未闭合 block 增量更新；结束后做一次完整解析校正。",
         "默认禁用原始 HTML；必须支持时使用维护中的 sanitizer、URL allowlist 和安全链接属性，绝不直接 dangerouslySetInnerHTML 未清洗结果。",
         "按动画帧或时间片批量提交，避免每个 token 触发整篇 Markdown 重解析。"
+      ],
+      "fullAnswer": [
+        "流式 Markdown 的 chunk 不等于完整语法单元，代码围栏、链接和 HTML 标签都可能在下一段才闭合。前端应先做流式解码和缓冲，再按节奏重新解析当前完整文本；不能直接把每个 chunk 当 HTML 插入，也不要对半个代码块做破坏性的最终格式化。",
+        "渲染层应默认转义或使用经过配置的 Markdown 渲染器，并对最终 HTML 做白名单清洗，禁用脚本、事件属性和危险 URL。链接打开前校验协议，代码高亮等昂贵工作可以在段落稳定后或时间片中执行。这样既避免 XSS，也避免每个 token 都触发一次完整重排。"
       ],
       "tags": ["Markdown", "XSS", "sanitization", "incremental rendering"],
       "sources": ["owasp-xss-prevention", "mdn-request-animation-frame"],
@@ -256,6 +300,10 @@
         "发送按钮做 single-flight 或显式允许分支生成；服务端使用幂等 requestId 防止重试创建两条回复。",
         "取消是协作式的：前端停止读取，服务端监听断连并停止模型与工具任务。"
       ],
+      "fullAnswer": [
+        "切换会话或重新生成时，旧请求可能在取消之后仍有事件到达，因此只调用 abort 不够。每次请求都要绑定 conversationId、generationId 和 AbortController，切换时把旧 generation 标记为 cancelled，并停止继续读取。",
+        "事件写入 store 前再次检查当前会话和 generationId，不匹配的迟到包直接丢弃。发送和重新生成要么做 single-flight，要么显式建立分支；服务端用 requestId 保证重试幂等，并在检测到连接断开时协作停止模型和工具任务，避免浏览器停读但后端仍继续消耗资源。"
+      ],
       "tags": ["race condition", "AbortController", "generationId", "idempotency"],
       "sources": ["mdn-abort-controller", "whatwg-sse-stream"],
       "relatedQuestionIds": ["ai-multi-turn-state-model", "axios-request-cancel-race", "ai-stream-abort"],
@@ -276,6 +324,10 @@
         "本地状态保存 client/server ID 映射与发送状态；成功后替换而不是追加，失败保留原内容供重试。",
         "刷新后从服务端按 cursor 拉取权威消息，再把未确认 outbox 按幂等键重放和对账。",
         "编辑、重新生成和分支对话使用 parentMessageId/version，避免只靠数组下标表达历史。"
+      ],
+      "fullAnswer": [
+        "乐观发送时，客户端先生成 clientMessageId，把消息以 pending 状态显示出来；服务端以这个 ID 作为幂等键持久化，并返回 serverMessageId。前端成功后更新同一条实体的 ID 映射和状态，而不是再追加一条，从而避免重复。",
+        "刷新页面后先按 cursor 拉取服务端权威历史，再检查本地 outbox 中未确认的消息。能够在服务端查到相同幂等键的就对账完成，查不到的才按策略重放。编辑、重新生成和分支对话使用 parentMessageId 与 version 表达关系，不能依赖数组下标，因为分页、删除和重排都会改变位置。"
       ],
       "tags": ["optimistic UI", "outbox", "idempotency", "reconciliation"],
       "sources": ["ai-sdk-streaming-data", "ai-sdk-message-persistence", "ai-sdk-resume-streams"],
@@ -298,6 +350,10 @@
         "跨组件共享且高频更新的消息状态优先拆 store/selector，不要把整棵消息数组塞进一个 Context。",
         "判断标准不是数据类型，而是它是否参与渲染、更新规则是否复杂、是否需要跨组件订阅。"
       ],
+      "fullAnswer": [
+        "是否使用 useState、useRef 或 useReducer，判断标准是数据是否参与渲染以及状态转换是否复杂。输入框文本、展开状态等简单 UI 值用 useState；消息从 pending 到 streaming、success、error 的多事件状态机更适合 useReducer，把合法转换集中管理。",
+        "AbortController、ReadableStream reader、计时器和最新 generationId 不需要直接显示，适合放 useRef，修改它们不会触发渲染。跨组件的高频消息数据应使用支持 selector 的 store 或细粒度订阅，避免把整条数组塞进 Context，导致一个 token 变化让所有消息组件都重新执行。"
+      ],
       "tags": ["useState", "useRef", "useReducer", "state machine"],
       "sources": ["react-built-in-hooks"],
       "relatedQuestionIds": ["react-hooks-selection", "ai-multi-turn-state-model"],
@@ -318,6 +374,10 @@
         "卸载时运行最后一次 cleanup，释放订阅、连接、timer 和 reader。",
         "开发 StrictMode 会在初次挂载额外执行一次 setup→cleanup→setup 压力测试；生产不做这次额外检查。",
         "若没有外部系统要同步，通常不该用 effect 组织纯数据流。"
+      ],
+      "fullAnswer": [
+        "useEffect 在组件提交到 DOM 后运行 setup。依赖变化时，React 会先使用旧依赖对应的 cleanup 清理旧订阅，再执行新依赖对应的 setup；组件卸载时还会执行最后一次 cleanup。因此 effect 适合描述与外部系统的同步关系，而不是普通数据计算。",
+        "例如订阅会话流时，setup 创建连接和 AbortController，cleanup 取消连接并清理监听器。如果依赖数组缺少 conversationId，可能继续监听旧会话；如果依赖每次都是新对象，又会反复重连。开发环境 StrictMode 会额外进行一次 setup、cleanup、setup 检查，正确实现 cleanup 后不应产生重复副作用。"
       ],
       "tags": ["useEffect", "cleanup", "StrictMode", "lifecycle"],
       "animationSceneId": "react-effect",
@@ -341,6 +401,10 @@
         "只需读取而不触发订阅重建的最新值可同步到 ref；响应式逻辑则声明完整依赖并实现 cleanup。",
         "不要用禁用 lint 掩盖依赖问题；应拆分 effect、把函数移入 effect 或稳定真正需要的依赖。"
       ],
+      "fullAnswer": [
+        "函数组件每次渲染都会形成新的变量快照，异步回调捕获的是创建它那次渲染里的值。流式回调如果一直引用旧的 messages，然后执行 setMessages([...messages, delta])，后续更新就可能覆盖前面已经到达的数据，这就是 stale closure。",
+        "优先使用 setMessages(current => update(current, delta))，让更新基于 React 队列里的最新状态。只需读取最新值且不希望重新订阅时，可以把值同步到 ref；真正参与响应式逻辑的变量则应写进依赖数组并正确 cleanup。不要通过关闭 eslint 规则隐藏问题，而应拆分 effect 或把只在 effect 内使用的函数移进去。"
+      ],
       "tags": ["stale closure", "useEffect", "functional update", "useRef"],
       "sources": ["react-use-effect", "react-use-callback"],
       "relatedQuestionIds": ["react-effect-lifecycle", "ai-conversation-race-control"],
@@ -361,6 +425,10 @@
         "只有子组件被 memo、其他 props 也稳定且跳过渲染有实际收益时，稳定 callback 才有意义。",
         "把持续变化的整条 messages 数组传给所有子项会击穿 memo，应按 messageId 订阅或保持未变化实体引用。",
         "先用 Profiler 找瓶颈；缓存也有依赖比较和认知成本，不要默认全量包裹。"
+      ],
+      "fullAnswer": [
+        "React.memo 在组件边界对 props 做浅比较；useCallback 缓存函数引用；useMemo 缓存计算结果或对象引用。只有子组件已经 memo、其他 props 也稳定，而且跳过渲染确实有价值时，稳定 callback 才可能减少一次渲染。",
+        "如果父组件每次都传入新的 messages 数组、对象字面量或变化中的 context value，memo 仍然会失效。更有效的做法是让消息项按 messageId 订阅自己的实体，并在 reducer 更新时保留未变化对象的引用。优化前用 React Profiler 找到昂贵 commit；缓存也有比较和维护依赖的成本，不应无差别包裹。"
       ],
       "tags": ["React.memo", "useMemo", "useCallback", "referential equality"],
       "animationSceneId": "react-memo",
@@ -384,6 +452,10 @@
         "reducer 更新时只替换发生变化的 message/part，保留其他实体引用，才能让 memo/selector 命中。",
         "外部 store 需提供一致快照与订阅语义，可通过 useSyncExternalStore 接入 React。"
       ],
+      "fullAnswer": [
+        "useContext 订阅的是整个 Provider value。只要 Provider 创建了新对象，所有使用该 Context 的消费者都会收到更新，即使它们只关心 value 里的一个字段。因此把高频 token 流和低频会话信息放在同一个 Context 中，会扩大重渲染范围。",
+        "可以拆分不同频率的 Context，稳定 Provider value，并把消息实体规范化为 messagesById。消息组件通过支持 selector 的外部 store 按 ID 订阅，reducer 只替换实际变化的实体。外部 store 接入 React 时要提供一致的 snapshot 和订阅语义，通常使用 useSyncExternalStore，而不是手写容易撕裂的监听。"
+      ],
       "tags": ["Context", "selector", "useSyncExternalStore", "render boundary"],
       "sources": ["react-built-in-hooks"],
       "relatedQuestionIds": ["react-memo-callback-identity", "ai-multi-turn-state-model"],
@@ -404,6 +476,10 @@
         "transition 只调整 React 更新优先级，不会减少网络事件数量，也不会替代帧级 buffer 合并和虚拟列表。",
         "受控输入本身不能只靠 transition 更新，否则会产生输入滞后；应分离即时值和延迟派生值。",
         "用 pending 状态显示轻量反馈，并测量输入延迟和 commit 时间验证收益。"
+      ],
+      "fullAnswer": [
+        "useTransition 用来把某些 React 更新标记为非紧急，让输入、点击等紧急交互可以先响应。例如输入框值同步更新，而复杂 Markdown、搜索结果或大列表的派生更新可以放进 transition，React 有机会中断并稍后继续它们。",
+        "它不会减少服务器发送的 token 数量，也不会自动合并网络事件，更不能替代虚拟列表和 requestAnimationFrame 批处理。受控输入本身必须保持同步，否则会出现输入滞后。使用后要结合 isPending 给出轻量反馈，并测量输入延迟和 commit 时间，确认优先级调整确实改善了体验。"
       ],
       "tags": ["useTransition", "priority", "streaming UI", "input latency"],
       "sources": ["react-use-transition", "react-built-in-hooks"],
@@ -426,6 +502,10 @@
         "超时使用安全默认主题并关闭高风险功能，后台重试成功后原子切换；未知租户直接拒绝而不是落到任意默认客户。",
         "监控配置命中率、启动耗时和降级次数，支持按版本回滚。"
       ],
+      "fullAnswer": [
+        "多租户应用启动时应先从可信的 hostname、网关或登录令牌解析 tenantId，并尽量在 SSR 或 HTML bootstrap 阶段注入最小配置，例如主题变量、Logo、配置版本和安全默认的功能开关。这样首屏不需要等第二次请求才知道自己属于哪个租户。",
+        "客户端缓存配置必须同时带 tenantId、version 和 TTL，绝不能把 A 租户缓存当成 B 租户的兜底。配置接口超时时可以使用安全默认主题并关闭高风险功能，后台重试成功后再原子切换；完全未知的租户应拒绝进入。监控配置命中率、启动耗时和降级次数，才能判断问题发生在哪一层。"
+      ],
       "tags": ["multi-tenant", "bootstrap", "fallback", "config cache"],
       "sources": ["next-multi-tenant", "vercel-feature-flags"],
       "relatedQuestionIds": ["tenant-single-image", "tenant-hydration-theme", "tenant-isolation"],
@@ -446,6 +526,10 @@
         "客户端 hydration 前读取同一 bootstrap 数据，不在首次 render 用 localStorage 或随机值决定不同 DOM。",
         "Logo/字体等资产提前确定尺寸和预加载策略，主题变化只改变量，避免额外 CLS。",
         "配置版本不一致时记录遥测并选择重新导航或延迟非关键切换，而不是静默产生 mismatch。"
+      ],
+      "fullAnswer": [
+        "Hydration 要求客户端第一次渲染与服务端 HTML 一致，所以服务端应按当前租户解析配置，并把 CSS variables 和配置版本直接写进首屏。客户端 hydration 前读取同一份 bootstrap 数据，不能在第一次 render 时突然用 localStorage 中另一套主题。",
+        "Logo、字体和图片应提前确定尺寸，主题差异尽量只修改 CSS 变量，避免内容重新排布造成 CLS。如果客户端发现配置版本不一致，应记录遥测并选择刷新或延迟非关键切换，而不是静默渲染一套不同 DOM，再用 suppressHydrationWarning 掩盖。"
       ],
       "tags": ["hydration", "CSS variables", "FOUC", "theme"],
       "sources": ["react-hydrate-root", "mdn-css-custom-properties", "next-multi-tenant"],
@@ -468,6 +552,10 @@
         "后端每个资源查询都绑定 tenant scope 和主体权限，前端隐藏按钮不是授权边界。",
         "日志与 trace 带 tenantId 但脱敏，针对跨租户 ID 猜测和缓存污染编写自动化测试。"
       ],
+      "fullAnswer": [
+        "tenantId 不能只来自前端 URL 参数，因为用户可以修改它。可信租户上下文应由域名、会话或签名令牌确定，并由后端在每次资源访问时重新校验。前端的请求缓存、Query key、IndexedDB、BroadcastChannel 和下载目录也都要把 tenantId 纳入命名空间。",
+        "切换租户时要取消旧租户请求、清理敏感 store 和页面缓存，防止迟到响应写进新租户界面。后端查询直接带 tenant scope 和资源权限，不允许先按用户提供的 ID 任意查出对象。日志可以携带脱敏 tenantId 和 traceId，并针对猜测资源 ID、缓存污染和跨租户切换编写自动化测试。"
+      ],
       "tags": ["tenant isolation", "cache key", "authorization", "BOLA"],
       "sources": ["owasp-authorization", "next-multi-tenant"],
       "relatedQuestionIds": ["tenant-config-bootstrap", "rbac-resource-permission"],
@@ -488,6 +576,10 @@
         "评估上下文包含 tenant、环境、用户分群和稳定 hash，避免刷新时随机抖动。",
         "配置有默认值、版本、审计和 kill switch；客户端拿不到配置时采用安全关闭。",
         "灰度监控错误率、延迟和业务指标，异常自动或人工回滚，不需要重新构建镜像。"
+      ],
+      "fullAnswer": [
+        "Feature Flag 的职责是控制功能曝光和发布节奏，不是授权。即使前端隐藏了按钮，后端仍必须验证用户、租户和资源权限。Flag 评估上下文可以包含 tenant、环境和用户分群，并用稳定 hash 分桶，避免用户每次刷新随机进入不同组。",
+        "每个开关应有安全默认值、版本、负责人、审计记录和 kill switch。客户端拿不到配置时，高风险功能默认关闭。灰度过程中同时观察错误率、延迟和业务指标，异常时直接回滚配置，不需要重新构建镜像；协议变化还要保持新旧前端在灰度期间都能正常工作。"
       ],
       "tags": ["Feature Flag", "rollout", "kill switch", "multi-tenant"],
       "sources": ["vercel-feature-flags", "owasp-authorization"],
@@ -510,6 +602,10 @@
         "跨边界 props 必须可序列化，密钥和数据库客户端只留服务端；不要因为一个按钮把整页都变成 client。",
         "用 Suspense 分段流式输出服务端内容，客户端接管交互不等于重新请求全部历史。"
       ],
+      "fullAnswer": [
+        "Next.js App Router 中，不需要浏览器状态和交互的页面壳、会话元数据、首屏历史适合留在 Server Component，可以减少客户端 JavaScript 并直接访问服务端数据。输入框、滚动容器、AbortController 和流式 reader 依赖浏览器 API，只把这部分最小子树标成 Client Component。",
+        "跨边界传递的 props 必须可序列化，数据库客户端、密钥和服务端对象不能传到浏览器。不要因为页面里有一个按钮就把整页改成 client。可以用 Suspense 分段返回服务端内容，再让客户端组件接管交互；接管不代表重新请求一遍已经包含在首屏中的历史数据。"
+      ],
       "tags": ["Next.js", "Server Components", "Client Components", "bundle"],
       "sources": ["next-server-client-components"],
       "relatedQuestionIds": ["next-ssr-middleware", "next-hydration-mismatch", "ai-multi-turn-state-model"],
@@ -530,6 +626,10 @@
         "为可缓存数据设计 tenant-scoped tag，更新后按 tag 或具体 path 失效，而不是全站清缓存。",
         "Server Action/Route Handler 完成写入后再 revalidate；客户端乐观更新失败时回滚并以服务端结果对账。",
         "区分 Data Cache、Full Route Cache 和客户端 Router Cache，回答时说明失效影响范围。"
+      ],
+      "fullAnswer": [
+        "缓存策略要由数据的共享范围决定。公共品牌配置可以按 tenant 和 version 缓存；用户会话、权限和私有知识库带身份上下文，通常动态读取或使用严格的用户级缓存键，不能进入所有用户共享的缓存。",
+        "可缓存数据应设计 tenant-scoped tag，写入成功后按 tag 或具体 path 失效，而不是粗暴清空全站。客户端乐观更新失败时回滚，并用服务端结果重新对账。回答时要区分 Data Cache、完整路由缓存和客户端 Router Cache，因为 revalidate 对它们的影响范围并不完全相同。"
       ],
       "tags": ["Next.js cache", "revalidatePath", "cache tag", "tenant"],
       "sources": ["next-revalidate-path", "next-multi-tenant"],
@@ -552,6 +652,10 @@
         "流式消息不要在 hydration 前偷偷追加到 SSR 列表，先以服务端 snapshot 对齐再消费增量事件。",
         "suppressHydrationWarning 只用于明确不可避免的单点文本，不是修复数据不一致的通用方案。"
       ],
+      "fullAnswer": [
+        "Hydration mismatch 本质上是服务端生成的 HTML 与客户端第一次 render 不同。排查时先比较两端输入，重点检查 Date、Math.random、window、localStorage、租户配置、无效 HTML 嵌套，以及流式消息是否在 hydration 前偷偷修改了列表。",
+        "修复原则是让首帧使用同一份 props 或 bootstrap snapshot。浏览器专属值放到 effect 后再更新，或者隔离成明确的 client-only 区域；增量消息先等服务端快照完成对齐再消费。suppressHydrationWarning 只适合确定无法一致的单点文本，不能用来隐藏数据源不一致。"
+      ],
       "tags": ["hydration mismatch", "SSR", "bootstrap", "debugging"],
       "sources": ["react-hydrate-root", "next-server-client-components"],
       "relatedQuestionIds": ["tenant-hydration-theme", "next-server-client-boundary"],
@@ -572,6 +676,10 @@
         "用户可绕过页面直接调用 API；每个服务端操作仍需校验身份、tenant scope、action 和 resource ownership。",
         "Proxy 传递的身份上下文必须可验证，不能信任客户端可伪造 header。",
         "把粗粒度导航体验和细粒度资源授权分开，日志用同一 trace 关联两层决策。"
+      ],
+      "fullAnswer": [
+        "Next.js Proxy 运行在请求到达路由之前，适合读取 cookie、识别租户、做粗粒度页面重定向和请求改写。它不适合承担所有数据库查询和资源级授权，也不能因为页面被挡住就认为接口安全。",
+        "用户可以绕过页面直接调用 Route Handler 或后端 API，所以每个服务端操作仍要验证身份、tenant scope、action 和 resource ownership。Proxy 传下去的身份信息必须可验证，不能相信客户端自定义 header。可以把 Proxy 看成导航体验层，把接口校验看成真正的安全边界。"
       ],
       "tags": ["Next.js Proxy", "authorization", "RBAC", "resource"],
       "sources": ["next-middleware", "owasp-authorization"],
@@ -594,6 +702,10 @@
         "刷新失败时原子清理凭证、拒绝全部排队请求并触发一次登录跳转。",
         "只对可安全重放的请求自动重试；流式请求和已消费 body 的请求走独立恢复策略。"
       ],
+      "fullAnswer": [
+        "多个请求同时收到 401 时，如果每个拦截器都刷新 token，会产生并发刷新和凭证覆盖。常见做法是维护唯一 refreshPromise：第一个 401 创建它，后续请求等待同一个 Promise，成功后再使用新 token 重放各自原请求。",
+        "原请求配置要有 _retry 标记，防止刷新接口失败或重放仍然 401 时无限循环。刷新失败时原子清理凭证、拒绝全部排队请求，并且只触发一次登录跳转。自动重放只适用于可以安全重放的请求；流式请求、上传和已经消费 body 的请求需要独立恢复方案。"
+      ],
       "tags": ["Axios", "401", "single flight", "token refresh"],
       "sources": ["axios-interceptors"],
       "relatedQuestionIds": ["axios-stream-pipeline", "axios-retry-idempotency", "request-observability-contract"],
@@ -614,6 +726,10 @@
         "写操作必须携带服务端认可的 idempotency key/requestId，服务端缓存第一次结果并返回同一响应。",
         "连接在响应前断开属于未知结果，先按幂等键查询状态，不能盲目重新提交。",
         "限制最大次数和总耗时，暴露 retryCount、traceId 与最终失败原因。"
+      ],
+      "fullAnswer": [
+        "GET 等幂等请求在网络错误、超时或部分 5xx 下可以有限重试，通常采用指数退避加随机 jitter，并尊重 Retry-After。参数错误、权限错误等 4xx 业务失败一般不应重试，因为重复发送不会改变结果。",
+        "创建订单、发送消息等写操作只有在服务端支持 idempotency key 或 requestId 时才能安全自动重试。服务端保存第一次处理结果，相同键再次到达时返回同一结果。连接在响应前断开属于结果未知，客户端应先按幂等键查询状态，而不是盲目再次写入，同时记录 retryCount 和 traceId。"
       ],
       "tags": ["retry", "idempotency", "backoff", "requestId"],
       "sources": ["axios-interceptors", "mdn-idempotent"],
@@ -636,6 +752,10 @@
         "旧请求晚到时丢弃，不覆盖当前查询；loading 也按请求身份收口，避免旧请求把新请求的 loading 关掉。",
         "服务端长任务要监听断连并协作取消，否则前端停读并不代表计算停止。"
       ],
+      "fullAnswer": [
+        "搜索、切页或切会话时，每次操作创建新的 AbortController，下一次操作开始或组件卸载时取消旧请求。取消错误要与真实失败分开，不应该给用户显示“系统异常”。但 abort 只是尽力而为，响应可能已经进入事件队列。",
+        "因此提交状态前还要检查 requestId 或 generationId，旧请求即使晚到也不能覆盖当前结果。loading 状态也要按请求身份结束，避免旧请求把新请求的 loading 关闭。后端长任务需要监听断连并协作取消，否则前端停止读取并不意味着模型或文件处理已经停止。"
+      ],
       "tags": ["AbortController", "race condition", "requestId", "cleanup"],
       "sources": ["mdn-abort-controller", "axios-interceptors"],
       "relatedQuestionIds": ["ai-conversation-race-control", "binary-stream-resume"],
@@ -656,6 +776,10 @@
         "请求生成 correlation id，前端日志、网关和后端 trace 贯通；敏感 token、prompt 和文件内容默认脱敏。",
         "SSE 区分握手失败、协议解析失败、interrupted 和服务端 error event；文件流记录 offset/ETag。",
         "UI 根据 retryable 和用户动作决定重试、降级或跳登录，监控按错误阶段和租户聚合。"
+      ],
+      "fullAnswer": [
+        "统一请求层应把任意后端响应转换成稳定的领域错误，例如包含 kind、code、retryable、traceId、httpStatus 和 cause。组件只根据这些稳定字段决定提示、重试或跳转，不应该在每个页面里分别解析 message 字符串和不同响应结构。",
+        "每次请求生成 correlation id，使前端日志、网关和后端 trace 能串起来，同时对 token、prompt 和文件内容默认脱敏。流式请求还要区分握手失败、协议解析失败、中途中断和服务端 error event；文件流记录 offset 与 ETag。监控按阶段、版本和租户聚合后，才能真正定位失败集中在哪里。"
       ],
       "tags": ["observability", "error contract", "traceId", "SSE"],
       "sources": ["axios-interceptors", "whatwg-sse-stream", "w3c-trace-context"],
@@ -678,6 +802,10 @@
         "避免可枚举 ID 带来的 BOLA；对拒绝、跨租户尝试和高风险操作记录审计。",
         "前端权限组件只改善体验，接口必须对每次请求重新做资源级判断。"
       ],
+      "fullAnswer": [
+        "RBAC 只能说明某个角色是否拥有某类 action，例如 document:read，但不能单独判断这个用户能否读取具体文档。资源访问还需要验证 tenant、resource ownership、数据范围和对象当前状态，这一层通常被称为资源级授权。",
+        "服务端查询应直接加入授权 scope，而不是先根据用户提供的 documentId 查出对象，再依赖前端隐藏。可枚举 ID 容易产生 BOLA 越权，因此拒绝访问、跨租户尝试和高风险操作都应记录审计。前端权限组件只改善体验，永远不能代替接口的逐次判断。"
+      ],
       "tags": ["RBAC", "BOLA", "resource ownership", "tenant"],
       "sources": ["owasp-authorization"],
       "relatedQuestionIds": ["rbac-defense-depth", "tenant-isolation", "next-proxy-auth-boundary"],
@@ -698,6 +826,10 @@
         "高风险操作后端每次校验当前权限，不能依赖 access token 中长期不变的旧角色。",
         "接口 403 后刷新权限快照并撤掉相关 UI，清理已打开弹窗和缓存数据。",
         "权限变更通过审计日志可追踪，避免静默刷新导致问题无法定位。"
+      ],
+      "fullAnswer": [
+        "权限不是永远不变的。权限响应可以携带 version 或 issuedAt，前端只做短期缓存；重新登录、切换租户、收到权限变更事件或接口返回 403 时，都应使旧快照失效并重新获取。",
+        "高风险操作由后端每次读取当前权限，不能只相信长期 access token 中的旧角色。刷新权限后，前端需要撤掉已失效的按钮、路由和弹窗，同时清理用户已经加载但不再有权访问的数据。权限变化和拒绝原因写入审计日志，才能在用户反馈“刚才还能用”时还原过程。"
       ],
       "tags": ["RBAC", "cache invalidation", "permission version", "403"],
       "sources": ["owasp-authorization"],
@@ -720,6 +852,10 @@
         "trace 记录 skillVersion、模型、工具参数和结果摘要，失败可复现但敏感数据需脱敏。",
         "指标恶化通过 kill switch 回滚到旧版，兼容期保留多版本解析与输出契约。"
       ],
+      "fullAnswer": [
+        "业务 Skill 应作为版本化能力包发布，明确输入 schema、依赖工具、权限、输出结构和变更说明。调用记录要包含 skillVersion、模型、工具参数摘要和 trace，使一次失败可以复现，而不是只保存最后一句自然语言。",
+        "发布前用固定样本集评估正确率、工具成功率、引用覆盖、延迟和成本；上线后按 tenant 或稳定流量分桶灰度。指标恶化时通过 kill switch 回到旧版，兼容期保留多版本解析。评估数据和日志需要脱敏，不能为了可观测性泄露用户文档或凭证。"
+      ],
       "tags": ["Skill", "versioning", "evaluation", "rollout"],
       "sources": ["openai-skills", "vercel-feature-flags"],
       "relatedQuestionIds": ["react-skill-design", "agent-loop-termination", "feature-flag-safe-release"],
@@ -740,6 +876,10 @@
         "区分可重试传输错误、需要改写输入的低置信度、权限拒绝和永久业务错误。",
         "检测相同 tool+args 重复和无新 Observation 的循环，触发改写、请求澄清或停止。",
         "前端展示当前阶段和可取消入口，不暴露敏感推理原文；终态保留引用、trace 和失败原因。"
+      ],
+      "fullAnswer": [
+        "ReAct 循环不能只依赖模型自己决定何时停止。系统应设置最大步骤、总 token 或成本、总耗时以及单个工具的重试预算，任何一个达到上限就进入明确终态，并把原因告诉用户。",
+        "错误还要分类：网络超时可以重试，权限拒绝通常不能重试，低置信度可能需要改写输入或向用户澄清。若检测到相同 tool 与 args 重复、Observation 没有新信息，就说明可能陷入循环，应停止或换策略。前端展示阶段、引用和取消入口，但不直接暴露敏感推理原文。"
       ],
       "tags": ["ReAct", "termination", "retry budget", "tool loop"],
       "sources": ["react-recover-paper", "openai-skills"],
@@ -762,6 +902,10 @@
         "生成后运行 TypeScript 编译和关键契约测试；运行时对外部响应仍需校验，类型不会保护脏数据。",
         "破坏性变更通过新版本或兼容窗口发布，前后端按部署顺序保持双读/双写。"
       ],
+      "fullAnswer": [
+        "OpenAPI 生成 TypeScript 类型只能减少手写漂移，不能自动阻止服务端破坏兼容。CI 应拉取固定版本 spec，在临时目录生成客户端并比较 diff，重点检测字段删除、required 或 nullable 改变、类型变化以及枚举收窄。",
+        "生成后继续运行 TypeScript 编译和关键契约测试，并禁止开发者直接修改生成产物。运行时收到的外部数据仍可做 schema 校验，因为静态类型不会检查真实响应。确实需要破坏性变更时，通过新版本或兼容窗口发布，并按前后端部署顺序维持双读或双写。"
+      ],
       "tags": ["OpenAPI", "codegen", "breaking change", "contract test"],
       "sources": ["swagger-codegen", "openapi-specification", "github-actions"],
       "relatedQuestionIds": ["cicd-openapi", "ai-card-versioning-fallback"],
@@ -782,6 +926,10 @@
         "生产环境设置审批、分支保护和最小权限 secrets，部署记录关联 commit、操作者和 URL。",
         "先小流量/预览验证健康指标，再提升流量；回滚切回上一份已验证产物而不是现场重新构建。",
         "数据库或协议变化采用向后兼容的 expand/contract，保证应用回滚不会被新 schema 卡死。"
+      ],
+      "fullAnswer": [
+        "安全部署要让验证、构建和发布都绑定同一个 commit SHA，构建产物一旦生成就保持不可变。GitHub Actions 的生产 job 使用 environment、最小权限 secrets 和 concurrency，避免两个版本同时发布，并对生产环境设置审批或分支保护。",
+        "发布先在预览或小流量环境检查健康指标，再逐步提升流量。回滚应该切回上一份已经验证的产物，而不是现场重新构建旧代码。数据库和协议变化采用 expand/contract：先增加兼容结构，再迁移读写，最后删除旧结构，保证应用回滚不会被新 schema 卡死。"
       ],
       "tags": ["GitHub Actions", "deployment", "concurrency", "rollback"],
       "sources": ["github-deployments", "github-actions"],
@@ -804,6 +952,10 @@
         "heap snapshot 对比增长路径，检查未 abort reader、未清 timer/listener、闭包持有整段消息和 Blob URL 未释放。",
         "分别用帧级批量、虚拟列表、细粒度订阅和 cleanup 修复，再用同一基线量化收益。"
       ],
+      "fullAnswer": [
+        "长会话卡顿要先建立可复现基线：固定消息数量和操作脚本，同时记录长任务、React commit 时间、DOM 节点、JS heap 和监听器数量。Performance flame chart 用来找 Markdown、布局和脚本长任务，React Profiler 用来判断哪些组件被 token 更新反复带着渲染。",
+        "内存问题用多次 heap snapshot 对比保留路径，重点检查未取消的 reader、timer、listener、Observer、闭包里的整段消息和未释放的 Blob URL。不同原因采用不同修复：事件做帧级批量、列表做虚拟化、状态做细粒度订阅、资源在 cleanup 中释放。最后用同一基线复测并给出量化收益。"
+      ],
       "tags": ["performance", "long task", "memory leak", "Profiler"],
       "sources": ["web-vitals", "webdev-virtual-list", "react-use-effect", "chrome-memory-problems"],
       "relatedQuestionIds": ["ai-long-conversation-rendering", "react-memo-callback-identity"],
@@ -825,6 +977,10 @@
         "图片、文件卡提前预留 aspect ratio/骨架；同一 partId 更新卡片时保留组件身份和测量缓存。",
         "设置合理 overscan，快速滚动时优先占位，停止后补完整 Markdown，平衡空白闪烁与渲染成本。"
       ],
+      "fullAnswer": [
+        "可变高度虚拟列表无法只用固定行高计算位置。首次可以使用估算高度快速渲染，元素出现后通过 ResizeObserver 或测量回调获得真实高度，并按 messageId 保存到 size map，之后只重算受影响项后面的 offset。",
+        "高度纠正时要以当前可见消息作为锚点，补偿 scrollTop，避免图片加载或卡片展开后内容跳走。图片和文件卡提前预留比例或骨架，同一 partId 更新时保留组件身份和测量缓存。overscan 需要在空白闪烁、DOM 数量和滚动速度之间取得平衡。"
+      ],
       "tags": ["virtual list", "variable height", "ResizeObserver", "scroll compensation"],
       "sources": ["webdev-virtual-list", "mdn-scroll-anchoring"],
       "relatedQuestionIds": ["ai-long-conversation-rendering", "cls-diagnosis"],
@@ -844,6 +1000,10 @@
         "React 按调用顺序关联每个 Hook 的状态。",
         "条件或循环会让不同渲染的调用顺序、数量变化。",
         "把 Hook 固定在组件顶层，把条件判断放进 Hook 回调或返回值处理。"
+      ],
+      "fullAnswer": [
+        "React 通过每次渲染时 Hook 的调用顺序，把 useState、useEffect 等调用与内部状态位置对应起来。它并不是根据变量名识别 Hook；如果某次渲染进入 if，下一次没有进入，后面的 Hook 就会整体错位。循环次数变化也会造成相同问题。",
+        "因此 Hook 必须在组件或自定义 Hook 的顶层按固定顺序调用。条件应该放进 effect 回调、事件处理或 Hook 返回值之后，例如始终调用 useEffect，再在回调里判断 enabled。这样不同渲染的 Hook 数量和顺序保持一致，React 才能正确关联状态。"
       ],
       "tags": [
         "Hooks",
@@ -879,6 +1039,10 @@
         "var 不形成块级作用域；let/const 只在所属代码块内可见。",
         "未捕获的 ReferenceError 会中止当前脚本，作用域实验应作为另一段独立代码运行。"
       ],
+      "fullAnswer": [
+        "var 声明会被提升到函数或全局作用域顶部，并在执行声明语句前初始化为 undefined，所以提前读取不会报错但值是 undefined。let 和 const 也会建立绑定，但在执行声明之前处于暂时性死区，提前访问会抛出 ReferenceError。",
+        "var 没有块级作用域，if 或 for 中声明的变量可能泄漏到外层；let 和 const 只在所属代码块内有效。const 限制的是变量绑定不能重新赋值，并不代表对象内部不可修改。暂时性死区的目的之一，是让错误的提前访问尽早失败，而不是静默得到 undefined。"
+      ],
       "tags": [
         "var",
         "let",
@@ -906,6 +1070,10 @@
         "展开运算符只复制第一层，嵌套对象仍共享引用。",
         "JSON 序列化会丢失或改变部分类型，并在循环引用上抛出 TypeError。",
         "structuredClone 支持循环引用和多种结构化可克隆类型，但函数等不可克隆值仍会抛出 DataCloneError。"
+      ],
+      "fullAnswer": [
+        "展开运算符、Object.assign 和数组 slice 都只复制第一层，嵌套对象仍共享引用，所以修改副本里的深层字段可能影响原对象。JSON 序列化虽然看似能深拷贝，但会丢失 undefined、函数等值，改变部分类型，并且遇到循环引用会报错。",
+        "structuredClone 更适合复制普通结构化数据，支持循环引用、Map、Set、Date 和可转移对象，但函数、DOM 节点等不可克隆值仍会抛出 DataCloneError。业务中应先判断是否真的需要复制整棵对象；不可变更新通常只复制发生变化的路径，比无差别深拷贝更省内存和时间。"
       ],
       "tags": [
         "deep copy",
@@ -935,6 +1103,10 @@
         "index 在增删或重排后会把旧状态错误地匹配给新位置。",
         "优先使用稳定、唯一的业务 ID。"
       ],
+      "fullAnswer": [
+        "React 在比较同级列表时使用 key 判断某个元素在前后两次渲染中是不是同一个实体。key 相同，React 才可能复用原来的 DOM 和组件状态；key 变化则通常按删除旧实体、创建新实体处理。",
+        "index 只表示当前位置。列表头部插入或中间删除后，后续元素的 index 全部变化，React 可能把旧组件状态错误地交给另一个业务对象，输入框内容、选中状态和动画都会错位。应该使用在数据生命周期内稳定且唯一的业务 ID；只有列表永不增删重排时 index 才相对安全。"
+      ],
       "tags": [
         "Diff",
         "key",
@@ -960,6 +1132,10 @@
         "SSE 是服务端到客户端的单向 HTTP 流，适合 Token 输出与消息推送。",
         "WebSocket 是双向全双工，适合协作编辑、双向聊天与高频互动。",
         "AI 流式对话要说明断开、增量解码与渲染合并。"
+      ],
+      "fullAnswer": [
+        "SSE 基于 HTTP 长连接，由服务端单向推送文本事件，浏览器原生 EventSource 支持自动重连，特别适合通知、任务进度和 AI token 输出。它的交互模型简单，但客户端要发消息仍然使用普通 HTTP，而且原生接口对自定义请求头等能力有限。",
+        "WebSocket 建立持久双向连接，客户端和服务端都能随时发送数据，更适合协同编辑、实时对战和高频双向状态同步，但要自行设计心跳、重连、鉴权、消息顺序和背压。选择时看是否真的需要持续双向通信，而不是认为 WebSocket 一定更高级。"
       ],
       "tags": [
         "SSE",
@@ -989,6 +1165,10 @@
         "all 任一失败即 reject；race 取最先落定的结果。",
         "allSettled 等待所有任务结束，适合需要汇总成功和失败结果的批量查询。"
       ],
+      "fullAnswer": [
+        "Promise 有 pending、fulfilled 和 rejected 三种状态，一旦从 pending 进入成功或失败就不能再改变。Promise.all 并发等待全部任务，只要其中一个 reject，返回的 Promise 就立即 reject；但其他底层任务不会因此自动取消。",
+        "Promise.race 取第一个落定的结果，第一个无论成功还是失败都会决定返回值。Promise.allSettled 会等所有任务结束，并为每项返回 fulfilled 或 rejected 结果，适合批量操作需要完整汇总的情况。选择组合器要从业务是否允许部分失败、是否需要全部结果出发。"
+      ],
       "tags": [
         "Promise",
         "concurrency",
@@ -1013,6 +1193,10 @@
         "WeakMap 的键只能是对象，并以弱引用关联。",
         "键对象不可达后可被垃圾回收，不因缓存本身强持有。",
         "它没有 size 和遍历 API，因此不适合需要枚举的集合。"
+      ],
+      "fullAnswer": [
+        "WeakMap 的 key 只能是对象或符合规范的非注册 Symbol，并且不会因为 key 存在于 WeakMap 中就阻止对象被垃圾回收。当 key 在程序其他地方已经不可达时，对应条目可以被自动清理，因此适合给 DOM、组件实例或对象关联临时元数据。",
+        "这种弱关联也意味着结果受垃圾回收影响，所以 WeakMap 没有可靠的 size、keys 或遍历 API。需要枚举、统计或长期保存数据时应该使用 Map；需要对象私有元数据或不会阻止对象回收的缓存时才选择 WeakMap。它降低泄漏风险，但不能修复 value 另外持有的大对象。"
       ],
       "tags": [
         "WeakMap",
@@ -1039,6 +1223,10 @@
         "使用 TextDecoder 的流式解码和 buffer 处理半包、粘包。",
         "把 delta 合并到队列，用 requestAnimationFrame 或时间片批量提交 UI。",
         "服务端监听断连并取消模型任务，形成双端资源释放。"
+      ],
+      "fullAnswer": [
+        "每次 AI 生成请求都创建独立 AbortController，停止生成、切换会话或组件卸载时调用 abort，并在服务端监听断连以终止模型任务。网络 chunk 只是任意字节片段，不保证等于一个字符、token 或完整 SSE 事件，所以要用 TextDecoder 的 stream 模式和 buffer 处理半包。",
+        "解析出的 delta 不要每到一个就立刻 setState，可以先进入队列，再用 requestAnimationFrame 或短时间片一次提交一批，减少 React commit 和 Markdown 重算。取消后仍要检查 generationId，防止已经排队的旧事件落入新会话；cleanup 同时释放 reader、计时器和监听器。"
       ],
       "tags": [
         "SSE",
@@ -1071,6 +1259,10 @@
         "达到阈值时可以调用模型提供的 compaction；如果业务需要可审计摘要，则由应用保留系统指令与最近对话，把旧消息压缩成结构化摘要。",
         "应用自建摘要应记录来源范围和版本，必要时可回查原文；模型提供的 opaque compaction item 不等同于可读摘要。"
       ],
+      "fullAnswer": [
+        "上下文预算不只是聊天历史，还包括 system prompt、工具定义与结果、当前输入以及为模型输出预留的 token。发送前应使用与模型匹配的计数方式估算总量，并在接近阈值时主动压缩，而不是等服务端报超限。",
+        "常见策略是保留系统指令和最近几轮原文，把较早内容压缩成结构化摘要，并记录摘要覆盖的消息范围和版本，必要时能回查原文。某些模型提供 opaque compaction item，它可以帮助续接上下文，但不等于用户可阅读、可审计的摘要。压缩后还要评估关键信息召回和事实漂移。"
+      ],
       "tags": [
         "Token",
         "context window",
@@ -1099,6 +1291,10 @@
         "ReAct 是 Agent 在 Reason、Act、Observe 间循环并决定下一步动作的编排模式。",
         "Skill 是带 SKILL.md 的版本化能力包；在业务约定中继续声明入参 schema、工具调用、权限限制和结构化返回。",
         "记录调用轨迹、置信度和终止条件，避免把自由推理直接当成业务结果。"
+      ],
+      "fullAnswer": [
+        "ReAct 是 Agent 的运行方式：根据目标进行推理，选择一个工具执行，再观察结果并决定下一步。Skill 则是把一类稳定业务能力封装成可复用、可版本化的说明和资源包，例如知识库检索、文档定位或权限检查。两者一个偏编排循环，一个偏能力契约。",
+        "业务 Skill 应明确输入 schema、允许调用的工具、权限限制、输出结构和失败方式，不能只保存一段自由 Prompt。运行时记录 skillVersion、工具结果、置信度和终止原因，并用固定样本评估。这样 Agent 可以组合能力，但最终业务结果仍受结构化校验和权限边界约束。"
       ],
       "tags": [
         "ReAct",
@@ -1129,6 +1325,10 @@
         "初始化拉取品牌、CSS 变量、功能开关和扩展模块清单。",
         "公共能力下沉到核心包，租户扩展通过配置和动态 import 按需加载。",
         "Feature Flag 只控制体验，后端继续校验租户和资源权限。"
+      ],
+      "fullAnswer": [
+        "单镜像多租户表示构建和发布一套通用产物，请求到达后再根据域名或可信租户标识加载品牌、CSS 变量、功能开关和扩展模块。这样不用为每个客户维护一条独立分支和镜像，公共修复也可以统一发布。",
+        "代码结构可以分成公共核心、平台业务和租户扩展三层。差异功能通过配置、插槽和动态 import 按需加载，避免所有客户代码进入首包。Feature Flag 只控制展示和灰度，后端仍然校验租户与权限；配置还需要版本、缓存隔离、安全默认值和回滚能力。"
       ],
       "tags": [
         "multi-tenant",
@@ -1161,6 +1361,10 @@
         "SSR 或 Server Components 并行准备首屏 HTML 和数据。",
         "浏览器先显示 HTML，再 hydration 绑定交互；关注服务端与客户端输出一致性。"
       ],
+      "fullAnswer": [
+        "Next.js 16 将原 middleware 文件约定改名为 proxy。Proxy 位于请求进入具体路由之前，适合读取 cookie、识别租户、做轻量重定向或改写；数据库级资源授权和重计算不应全部堆在这里。",
+        "SSR 或 Server Component 在服务端准备首屏 HTML 和数据，让浏览器更快看到内容。随后 hydration 使用客户端 JavaScript 给现有 HTML 绑定事件和状态，而不是重新创建一份完全不同的页面。服务端与客户端第一次输出必须一致，否则就会出现 hydration mismatch。"
+      ],
       "tags": [
         "Next.js",
         "Proxy",
@@ -1191,6 +1395,10 @@
         "策略层统一 Token、tenantId、traceId、命名转换和错误模型。",
         "普通 JSON 请求走 Axios；流式请求走 fetch/ReadableStream，避免强行共用不适合的 transport。",
         "401 使用单航班刷新，幂等请求才按策略重试，流式请求使用 AbortController。"
+      ],
+      "fullAnswer": [
+        "统一请求层可以共享鉴权、tenantId、traceId、命名转换和错误契约，但不代表所有请求必须使用同一个传输实现。普通 JSON 请求适合 Axios 和拦截器；需要逐块读取响应的流式请求更适合 fetch 与 ReadableStream，因为它们直接提供 reader 和 AbortController。",
+        "401 刷新使用 single-flight，避免并发刷新；重试只对幂等或带幂等键的操作开放。流式管道负责 TextDecoder、事件边界、取消、序号和 done/error 收口，再向组件暴露统一 StreamEvent。这样复用的是策略和领域模型，而不是强行让 Axios 模拟不擅长的浏览器流。"
       ],
       "tags": [
         "Axios",
@@ -1223,6 +1431,10 @@
         "组件层只负责入口和体验收口。",
         "后端接口必须再次校验操作权限、tenantId 与资源归属，并写审计日志。"
       ],
+      "fullAnswer": [
+        "路由层根据权限决定用户能否进入页面，组件层隐藏或禁用没有权限的按钮，这两层主要改善体验。真正的安全边界在后端接口，因为用户可以绕过前端，直接构造 HTTP 请求。",
+        "接口每次都要验证当前用户、action、tenantId、资源归属和数据范围，并对拒绝及高风险操作写入审计日志。前端收到 403 后刷新权限快照并收回已经展示的入口。三层使用同一套权限标识可以减少认知差异，但不能因为前端已经判断就省略后端检查。"
+      ],
       "tags": [
         "RBAC",
         "authorization",
@@ -1251,6 +1463,10 @@
         "为图片、图表和地图预留尺寸；异步内容使用骨架或固定容器。",
         "复测 CLS 并记录影响最大的元素与收益。"
       ],
+      "fullAnswer": [
+        "CLS 衡量页面生命周期中非预期布局偏移的累计程度。定位时使用 Lighthouse、Performance 面板或 Web Vitals 数据找到具体发生偏移的元素，并结合加载时间线判断是图片、字体、异步组件还是插入式内容造成。",
+        "修复通常是提前为图片、视频、图表和地图声明宽高或 aspect-ratio，异步内容提供尺寸稳定的骨架，避免在现有内容上方突然插入模块。完成后用相同设备、网络和操作脚本复测 CLS，记录主要偏移元素和指标变化，形成定位、方案、收益闭环。"
+      ],
       "tags": [
         "CLS",
         "Core Web Vitals",
@@ -1278,6 +1494,10 @@
         "Vue 更倾向细粒度响应式依赖追踪，React 以 state 更新触发组件重新执行并比较 UI 描述。",
         "比较时区分实现机制和开发模型，避免绝对化谁更快。"
       ],
+      "fullAnswer": [
+        "Vue 2 主要通过 Object.defineProperty 为已有属性定义 getter 和 setter，因此新增属性、数组下标和部分集合操作需要额外处理。Vue 3 使用 Proxy 代理对象，可以统一拦截更多读写操作，并通过依赖追踪让使用到某个响应式值的副作用在它变化时更新。",
+        "React 通常不追踪对象属性被谁读取，而是通过 setState 触发组件函数重新执行，生成新的 UI 描述再进行协调。Vue 更偏细粒度响应式，React 更强调不可变状态和显式数据流。两者都有批处理和优化机制，不能脱离组件结构、更新范围和实现版本简单断言谁一定更快。"
+      ],
       "tags": [
         "Vue 2",
         "Vue 3",
@@ -1303,6 +1523,10 @@
         "提交前用 Hooks 执行聚焦的 lint、format 和类型检查。",
         "以 OpenAPI 为契约生成类型与请求层，减少手写接口漂移。",
         "GitHub Actions 在 PR 或 main 推送时运行相同校验，阻止未经验证的变更进入主线。"
+      ],
+      "fullAnswer": [
+        "本地提交前用 Git Hooks 执行范围合适的 lint、format、类型检查和快速测试，让明显问题尽早失败；耗时较长的完整测试与构建放在 CI 中。OpenAPI 作为接口契约生成 TypeScript 类型和请求函数，生成文件由脚本维护，不允许业务代码手工修改。",
+        "GitHub Actions 在 PR 与 main 上运行同一套校验，固定依赖和 Node 版本，并把构建产物与 commit SHA 关联。接口 spec 变化时检查生成 diff、TypeScript 编译和契约测试；部署 job 再加 environment、并发控制和回滚记录。这样规范不是口头约定，而是自动阻止不合格变更进入主线。"
       ],
       "tags": [
         "CI/CD",
