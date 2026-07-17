@@ -5,6 +5,10 @@ const labelStatus = (value) => value === "verified" ? "来源已核验" : "来�
 let questions = [];
 let sourceById = new Map();
 let interviewById = new Map();
+const desktopMasonry = window.matchMedia("(min-width: 1280px)");
+let masonryFrame = 0;
+
+const masonryObserver = new ResizeObserver(() => scheduleMasonryLayout());
 
 function occurrenceSummary(question) {
   const items = question.companyOccurrences || [];
@@ -38,6 +42,29 @@ function createOption(value, text) {
   return option;
 }
 
+function layoutMasonry() {
+  masonryFrame = 0;
+  const list = $("#questionList");
+  const cards = [...list.querySelectorAll(":scope > .card")];
+  if (!desktopMasonry.matches) {
+    cards.forEach((card) => card.style.removeProperty("grid-row-end"));
+    return;
+  }
+  const styles = getComputedStyle(list);
+  const rowHeight = parseFloat(styles.gridAutoRows);
+  const rowGap = parseFloat(styles.rowGap);
+  const measurements = cards.map((card) => ({ card, height: card.getBoundingClientRect().height }));
+  measurements.forEach(({ card, height }) => {
+    const span = Math.ceil((height + rowGap) / (rowHeight + rowGap));
+    card.style.gridRowEnd = "span " + span;
+  });
+}
+
+function scheduleMasonryLayout() {
+  if (masonryFrame) cancelAnimationFrame(masonryFrame);
+  masonryFrame = requestAnimationFrame(layoutMasonry);
+}
+
 function render() {
   const search = $("#search").value.trim().toLowerCase();
   const track = $("#track").value;
@@ -57,6 +84,7 @@ function render() {
     list.innerHTML = '<div class="empty">没有匹配的题目，试试更少的筛选条件。</div>';
     return;
   }
+  masonryObserver.disconnect();
   filtered.forEach((question) => {
     const occurrence = occurrenceSummary(question);
     const sources = question.sources.map((id) => sourceById.get(id)).filter(Boolean);
@@ -75,7 +103,9 @@ function render() {
       '<section class="answer-panel"><div class="answer-heading">' + icon("list-bullets") + '<h3>高分回答骨架</h3></div><ul>' + question.answerOutline.map((item) => '<li>' + escapeHtml(item) + '</li>').join("") + '</ul><details class="full-answer"><summary>' + icon("article") + '<span>展开正式回答</span>' + icon("caret-down") + '</summary><div class="full-answer-body">' + question.fullAnswer.map((paragraph) => '<p>' + escapeHtml(paragraph) + '</p>').join("") + '</div></details><div class="card-actions"><a class="detail-link" href="' + detailUrl + '">' + icon("arrow-square-out") + '独立题目页</a>' + (animationUrl ? '<a class="animation-button" href="' + animationUrl + '" target="_blank" rel="noreferrer">' + icon("play") + '查看概念动画</a>' : "") + '</div></section>' +
       '<div class="card-footer"><div class="source-publishers">' + icon("link") + '<span>来源：</span>' + publishers.map((source) => '<a href="' + escapeHtml(source.url) + '" target="_blank" rel="noreferrer">' + escapeHtml(source.publisher) + '</a>').join('<span class="source-separator">·</span>') + '</div><div class="status ' + (question.sourceStatus === "verified" ? "" : "review") + '">' + icon("shield-check") + labelStatus(question.sourceStatus) + '</div></div>';
     list.appendChild(card);
+    masonryObserver.observe(card);
   });
+  scheduleMasonryLayout();
 }
 
 async function start() {
@@ -93,6 +123,7 @@ async function start() {
     $("#occurrenceCount").textContent = occurrences;
     $("#sourceCount").textContent = sourceById.size;
     ["search", "track", "type", "sourceStatus"].forEach((id) => $( "#" + id).addEventListener(id === "search" ? "input" : "change", render));
+    desktopMasonry.addEventListener("change", scheduleMasonryLayout);
     render();
   } catch (error) {
     $("#loadError").hidden = false;

@@ -1,39 +1,48 @@
-# Design QA: question bank card redesign
+# Design QA: question bank masonry layout
 
 ## Evidence
 
-- Source visual: `/var/folders/y1/8hrdxh5n37bbkmp0qj75fhbc0000gn/T/codex-clipboard-eb156def-1d9a-49cd-8c0a-3c5489a4c220.png`
-- Implementation capture: `/tmp/question-card-reference-desktop.png`
-- Combined comparison input: `/tmp/card-design-comparison.png`
-- Mobile capture: `/tmp/question-card-reference-mobile.png`
-- Desktop viewport: 1536 × 1024; AI multi-turn question filtered; answer outline visible; formal answer collapsed.
-- Mobile viewport: 390 × 844; the same question filtered; formal answer tested both collapsed and expanded.
+- Source visual truth: `/var/folders/y1/8hrdxh5n37bbkmp0qj75fhbc0000gn/T/codex-clipboard-58326fbd-783b-428b-be5d-a1c601a94b2f.png`
+- Browser-rendered implementation: `/tmp/question-bank-masonry-desktop-v2.png`
+- Combined comparison input: `/tmp/question-bank-masonry-comparison-v2.png`
+- Mobile implementation: `/tmp/question-bank-masonry-mobile.png`
+- Desktop viewport: 1536 × 1024, question bank default filter state, formal answers collapsed.
+- Mobile viewport: 390 × 844, question bank default filter state.
 
 ## Full-view comparison
 
-The combined input compares the supplied reference and the rendered implementation in one view. The implementation follows the same visual hierarchy: kicker and type badges, large title, explanatory prompt, topic tags, company/recent-interview strip, bordered answer panel, action row, publisher footer, and verified-source status. Card width is 1440 px with 40 px desktop padding and a 950.625 px rendered height.
+The source shows the problem state: both cards stretch to one row height, leaving unused space below the shorter left card. In the combined comparison, the implementation uses a natural-height masonry grid. The first left card is about 38 px shorter than the first right card, and the next left card begins before the first right card ends. This removes the equal-row gap while preserving the existing card design, typography, colors, borders, icons, and content hierarchy.
 
-No P0, P1, or P2 layout mismatch remains. The implementation deliberately keeps question-specific outline content and a collapsed formal-answer control, so the answer panel contains one additional row compared with the static reference.
+## Focused region comparison
 
-## Focused comparison
+The full two-card region is large enough to inspect the required change directly: both complete first cards, their bottoms, and the beginning of both following cards are visible together. A separate detail crop is unnecessary because typography, icons, controls, and card boundaries remain readable at this scale and were not redesigned.
 
-The focused top-region comparison checks typography, icons, pills, borders, spacing, and the company strip. The final desktop title renders at 49.152 px. Icons use Phosphor Icons rather than handwritten SVG or CSS drawings. Pills, border radii, dark surfaces, green project metadata, amber project badge, and blue primary action follow the supplied visual.
+## Required fidelity surfaces
 
-## Comparison history
-
-1. Initial implementation rendered the right structure but the desktop card was 915 px tall and the typography, tag pills, company strip, and primary action were visibly undersized.
-2. Increased the kicker, badges, title, prompt, tags, company strip, source footer, and action sizing.
-3. Final comparison renders a 950.625 px card with the intended hierarchy and density.
+- Fonts and typography: unchanged from the approved question-card design; no new wrapping or truncation was introduced.
+- Spacing and layout rhythm: 20 px vertical and horizontal gaps are consistent; each card keeps its natural content height.
+- Colors and visual tokens: unchanged; existing dark surfaces and semantic green, amber, and blue colors are preserved.
+- Image and icon fidelity: no raster assets were added or replaced; existing Phosphor icons remain intact.
+- Copy and content: all 56 questions and their original ordering are preserved in the single-column layout.
 
 ## Interaction and responsive checks
 
-- Search filtering returns the target card.
-- Answer outline remains immediately scannable.
-- Formal answer is collapsed by default and expands to two readable paragraphs.
-- Formal-answer summary is 54 px high on mobile; the animation action is 48 px high.
-- At 390 px, document width equals viewport width and no horizontal overflow occurs.
-- Independent-question and animation links are present as separate actions.
-- Browser console and runtime error collection returned no errors.
-- `npm run check` and `git diff --check` pass.
+- Desktop renders a 2-column masonry grid and all 56 cards while keeping every card as a direct child in its original DOM order.
+- Expanding the first right-column formal answer increases only that card and moves only the next right-column card; the left column stays in place.
+- Crossing below the 1280 px breakpoint clears masonry row spans without rebuilding cards, so the original linear order, expanded state, and focus can be preserved.
+- At 390 px, all 56 cards render in the original order, formal answers are collapsed by default, and no horizontal overflow occurs.
+- Search and filter rendering continue to rebuild the layout from the filtered result set.
+- Browser console/runtime checks found no page errors.
+
+## Comparison history
+
+1. Previous implementation used a two-column CSS Grid. Grid row stretching made shorter cards match the height of their taller neighbor and left visible empty space.
+2. An initial two-wrapper implementation removed the gaps but changed keyboard and screen-reader traversal to read an entire column at a time and measured layout after every insertion.
+3. Replaced the wrappers with a single DOM-order CSS Grid, batched row-span measurements, and a resize observer for expansion and viewport changes.
+4. Browser evidence confirms the next left card starts earlier, expansion remains column-local, mobile keeps the original order and expanded state, and all 56 cards remain direct list children.
+
+## Findings
+
+No actionable P0, P1, or P2 findings remain. The implementation intentionally differs from the supplied problem screenshot by removing equal card heights, which is the requested outcome.
 
 final result: passed
