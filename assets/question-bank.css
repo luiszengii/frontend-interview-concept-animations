@@ -31,6 +31,16 @@ body{margin:0;background:var(--bg);color:var(--txt);font-family:-apple-system,Bl
 
 .empty{grid-column:1/-1;text-align:center;padding:42px 12px;color:var(--sub);border:1px dashed var(--line);border-radius:13px}.load-error{border:1px solid var(--warn);background:rgba(245,158,11,.08);padding:18px;border-radius:13px;color:#ffe8b5}footer{border-top:1px solid var(--line);color:var(--sub);font-size:13px;text-align:center;padding:24px 16px 38px}code{color:#c9d8f7}
 
+@media(min-width:1280px){
+  .question-list{grid-template-columns:repeat(2,minmax(0,1fr));gap:20px}
+  .card{padding:28px;border-radius:18px}
+  .card-kicker{align-items:flex-start;gap:12px;margin-bottom:24px}.card-kicker-copy{gap:10px;font-size:16px}.card-kicker-copy i{font-size:26px}.card-badges{gap:8px}.badge{gap:6px;min-height:40px;padding:0 12px;font-size:14px}.badge i{font-size:18px}
+  .card h2{font-size:clamp(28px,2.25vw,36px);letter-spacing:-.7px}.prompt{font-size:18px;line-height:1.6;margin:20px 0 22px}.tags{gap:8px}.tag{font-size:14px;padding:7px 12px}
+  .company-strip{grid-template-columns:.8fr 1.2fr;margin:28px 0 22px}.company-strip>div{gap:9px;min-height:78px;padding:0 18px;font-size:14px}.company-strip i{font-size:22px}.company-strip strong{font-size:15px;margin-left:4px}.company-strip>div:nth-child(2) strong{margin-left:5px}
+  .answer-panel{padding:24px 24px 0}.answer-heading{gap:12px}.answer-heading i{font-size:26px}.answer-heading h3{font-size:19px}.answer-panel>ul{margin:20px 0;padding-left:23px;font-size:15px;line-height:1.75}.full-answer summary{min-height:54px;font-size:15px}.full-answer-body{font-size:15px}
+  .card-actions{min-height:76px;gap:14px}.card-actions a{min-height:50px;font-size:16px}.animation-button{min-width:250px;padding:0 22px}.card-footer{align-items:flex-start;flex-wrap:wrap;gap:14px;padding-top:22px}.source-publishers{font-size:14px}.status{margin-left:auto;font-size:14px}
+}
+
 @media(max-width:900px){
   .shell{width:min(100% - 28px,1440px);padding-top:40px}.filters{grid-template-columns:1fr 1fr}.filters label:first-child{grid-column:1/-1}.card{padding:28px}.card-kicker{align-items:flex-start}.company-strip{grid-template-columns:1fr}.company-strip>div+div{border-left:0;border-top:1px solid var(--line)}.animation-button{min-width:260px}
 }
